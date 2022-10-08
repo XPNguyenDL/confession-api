@@ -12,7 +12,8 @@ namespace ConfessionAPI.Models
     public enum Gender
     {
         Male,
-        Female
+        Female,
+        Other
     }
     public class UserProfile
     {

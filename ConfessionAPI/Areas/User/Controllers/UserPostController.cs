@@ -19,8 +19,7 @@ namespace ConfessionAPI.Areas.User.Controllers
     public class UserPostController : UserController
     {
         private ConfessionDbContext db = new ConfessionDbContext();
-
-
+        
         [HttpPost]
         public async Task<IHttpActionResult> Create()
         {
@@ -47,7 +46,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                         Like = 0,
                         Dislike = 0,
                         Report = 0,
-                        Active = createModel.Actived,
+                        Active = true,
                         Status = PostStatus.Violate,
                         CreatedTime = DateTime.Now,
                         Categories = new List<Category>(),
@@ -120,12 +119,11 @@ namespace ConfessionAPI.Areas.User.Controllers
             }
             catch (Exception e)
             {
-                return Json(e.ToString());
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
             }
             return Json(result);
         }
-
-
 
         [HttpPost]
         public async Task<IHttpActionResult> Edit()
@@ -224,11 +222,14 @@ namespace ConfessionAPI.Areas.User.Controllers
             }
             catch (Exception e)
             {
-                return Json("Error edit post or History is empty or Account error\n" + e);
+                ModelState.AddModelError("Error", e.Message);
+                ModelState.AddModelError("DB", "Error edit post or History is empty or Account error");
+                return BadRequest(ModelState);
             }
             return Json(post);
         }
 
+        [HttpPost]
         public IHttpActionResult Delete()
         {
             try
@@ -237,22 +238,26 @@ namespace ConfessionAPI.Areas.User.Controllers
                 Guid postId = Guid.Parse(HttpContext.Current.Request["Id"]);
                 var userId = User.Identity.GetUserId();
                 
-                var listPostHistory = db.PostHistories.Where(x => x.AccountId == userId && x.PostId == postId).ToList();
+                var listPostHistorys = db.PostHistories.Where(x => x.AccountId == userId && x.PostId == postId).ToList();
                 var oldPost = db.Posts.Find(postId);
                 
+                // Delete PostLike
                 var postLikes = db.PostLikes.Where(s => s.Id == oldPost.Id).ToList();
-                if (postLikes != null)
+                if (postLikes.Count != 0)
                 {
                     foreach (var postLike in postLikes)
                     {
                         db.PostLikes.Remove(postLike);
                     }
                 }
+
+                // Delete comment
                 var comments = db.Comments.Where(s => s.Id == oldPost.Id).ToList();
-                if (comments != null)
+                if (comments.Count != 0)
                 {
                     foreach (var comment in comments)
                     {
+                        // Delete CommentLike
                         var commentLikes = db.CommentLikes.Where(s => s.Id == comment.Id);
                         foreach (var commentLike in commentLikes)
                         {
@@ -262,6 +267,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                     }
                 }
 
+                // Delete Picture
                 var ctx = HttpContext.Current;
                 var root = ctx.Server.MapPath("~/Uploads/Pictures/Post/" + oldPost.Id);
                 if (Directory.Exists(root))
@@ -274,15 +280,24 @@ namespace ConfessionAPI.Areas.User.Controllers
                     Directory.Delete(root, true);
                 }
 
+                // Delete PostHistory
+                if (listPostHistorys.Count != 0)
+                {
+                    foreach (var itemHistory in listPostHistorys)
+                    {
+                        db.PostHistories.Remove(itemHistory);
+                    }
+                }
+
                 db.Posts.Remove(oldPost);
                 db.SaveChanges();
-
-                return Json("");
+                var newPost = db.Posts.ToList();
+                return Json(newPost);
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-                throw;
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
             }
         }
 
@@ -332,7 +347,7 @@ namespace ConfessionAPI.Areas.User.Controllers
             }
             catch (Exception e)
             {
-                ModelState.AddModelError("error", "Like error.");
+                ModelState.AddModelError("Error", e.Message);
                 return BadRequest(ModelState);
             }
         }
@@ -393,7 +408,8 @@ namespace ConfessionAPI.Areas.User.Controllers
                 }
                 catch (Exception e)
                 {
-                    return Json("Error miss file or upload error!");
+                    ModelState.AddModelError("Error", e.Message);
+                    return BadRequest(ModelState);
                 }
             }
 

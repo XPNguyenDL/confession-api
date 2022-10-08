@@ -356,8 +356,16 @@ namespace ConfessionAPI.Controllers
                 user = new Account()
                 {
                     UserName = model.UserName, 
-                    Email = model.Email
-
+                    Email = model.Email,
+                    UserProfile = new UserProfile
+                    {
+                        FirstName = model.UserName,
+                        LastName = model.UserName,
+                        Description = "",
+                        Gender = Gender.Other,
+                        Major = model.UserName,
+                        Birthday = DateTime.Now
+                    }
                 };
 
                 IdentityResult result = UserManager.Create(user, model.Password);

@@ -26,7 +26,7 @@ namespace ConfessionAPI.Controllers
             try
             {
                 var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
-                posts = posts.Where(s => s.Active == true).ToList();
+                //posts = posts.Where(s => s.Active == true).ToList();
 
                 Account account = new Account();
                 PostHistory history = new PostHistory();
@@ -51,7 +51,7 @@ namespace ConfessionAPI.Controllers
                     post.Avatar = account.UserProfile.Avatar;
 
                 }
-                posts.Where(x => (x.PostHistories = new List<PostHistory>()).Count() == 0).ToList();
+                //posts.Where(x => (x.PostHistories = new List<PostHistory>()).Count() == 0).ToList();
                 posts = posts.OrderBy(x => x.CreatedTime).ToList();
 
                 return Json(posts);

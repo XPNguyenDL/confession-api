@@ -52,7 +52,7 @@ namespace ConfessionAPI.Controllers
 
                 }
                 //posts.Where(x => (x.PostHistories = new List<PostHistory>()).Count() == 0).ToList();
-                posts = posts.OrderBy(x => x.CreatedTime).ToList();
+                posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
 
                 return Json(posts);
             }
@@ -61,11 +61,13 @@ namespace ConfessionAPI.Controllers
                 return Json(ex);
             }
         }
+
         [HttpGet]
-        public IHttpActionResult FindPost(string keyword)
+        public IHttpActionResult FindPost()
         {
             try
             {
+                string keyword = HttpContext.Current.Request["keyword"];
                 var listKey = keyword.Split(' ');
                 var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
                 foreach (var key in listKey)
@@ -91,10 +93,61 @@ namespace ConfessionAPI.Controllers
             }
             catch (Exception ex)
             {
-                return Json(ex);
+                ModelState.AddModelError("Error", ex.Message);
+                return BadRequest(ModelState);
             }
         }
 
-       
+        [HttpPost]
+        public IHttpActionResult FindPostCategory()
+        {
+            try
+            {
+                Guid categoryId = Guid.Parse(HttpContext.Current.Request["Id"]);
+                var posts = db.Posts.ToList();
+                var postResult = new List<Post>();
+                Account account = new Account();
+
+                foreach (var post in posts)
+                {
+                    var postHistorys = db.PostHistories.Where(x => x.PostId == post.Id).ToList();
+                    foreach (var postHistory in postHistorys)
+                    {
+                        account = db.IdentityUsers.Find(postHistory.AccountId);
+                        break;
+                    }
+
+                    if (account.UserProfile.NickName != null)
+                    {
+                        post.NickName = account.UserProfile.NickName;
+                    }
+                    else
+                    {
+                        post.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
+                    }
+
+                    post.Avatar = account.UserProfile.Avatar;
+
+                    foreach (var category in post.Categories)
+                    {
+                        if (category.Id == categoryId)
+                        {
+                            postResult.Add(post);
+                            break;
+                        }
+                    }
+                }
+
+
+                postResult = postResult.OrderByDescending(x => x.CreatedTime).ToList();
+
+                return Json(postResult);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
     }
 }

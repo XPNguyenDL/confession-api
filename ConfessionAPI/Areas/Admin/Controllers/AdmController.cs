@@ -8,7 +8,7 @@ using System.Web.Http;
 namespace ConfessionAPI.Areas.Admin.Controllers
 {
     [Authorize(Roles = "Admin, Manager")]
-    public class AdminController : ApiController
+    public class AdmController : ApiController
     {
 
     }

@@ -29,6 +29,9 @@ namespace ConfessionAPI.Models
 
         public int? LevelComment { get; set; }
 
+        [ForeignKey("ChildComments")]
+        public Guid? ParentId { get; set; }
+
         [ForeignKey("Replier")]
         public string AccountId { get; set; } // Tài khoản trả lời
         [ForeignKey("Post")]
@@ -41,10 +44,14 @@ namespace ConfessionAPI.Models
         // Navigation properties
         // ======================================================
 
+        [JsonIgnore]
         public virtual Account Replier { get; set; }
+        [JsonIgnore]
         public virtual Post Post { get; set; }
         [JsonIgnore]
         public virtual IList<CommentLike> CommentLikes { get; set; }
+        //[JsonIgnore]
+        public virtual IList<Comment> ChildComments { get; set; }
     }
 
     public class CommentLike

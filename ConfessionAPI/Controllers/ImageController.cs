@@ -16,5 +16,11 @@ namespace ConfessionAPI.Controllers
             var path = Path.Combine(dir, id); //validate the path for security or use other means to generate the path.
             return base.File(path, "image/jpeg");
         }
+        public ActionResult User(string id)
+        {
+            var dir = Server.MapPath("~/Uploads/Pictures/User/");
+            var path = Path.Combine(dir, id); //validate the path for security or use other means to generate the path.
+            return base.File(path, "image/jpeg");
+        }
     }
 }

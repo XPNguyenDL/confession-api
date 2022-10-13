@@ -21,6 +21,7 @@ namespace ConfessionAPI.Models
         }
         [DataMember]
         public virtual UserProfile UserProfile { get; set; }
+        [DataMember]
         public virtual IList<Comment> Comments { get; set; }
         [DataMember]
         public virtual IList<PostHistory> PostHistory { get; set; }

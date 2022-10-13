@@ -57,30 +57,8 @@ namespace ConfessionAPI.Controllers
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
 
         // GET api/Account/UserInfo
-        [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
-        public IHttpActionResult GetUserInfo()
-        {
-            //ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
-
-            //return new UserInfoViewModel
-            //{
-            //    Email = User.Identity.GetUserName(),
-            //    HasRegistered = externalLogin == null,
-            //    LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null
-            //};
-            var account = db.IdentityUsers.Find(User.Identity.GetUserId());
-            var userInRoles = db.UserInRoles.Where(s => s.UserId == account.Id).ToList();
-            List<string> temp = new List<string>();
-            foreach (var userRole in userInRoles)
-            {
-                var role = db.Roles.Find(userRole.RoleId);
-                temp.Add(role.Name);
-                account.RoleTemps = temp;
-            }
-            return Json(account);
-
-
-        }
+        //[HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
+        
 
         // POST api/Account/Logout
         [Route("Logout")]
@@ -377,6 +355,10 @@ namespace ConfessionAPI.Controllers
 
                 if (!result.Succeeded)
                 {
+                    //ModelState.AddModelError("Error", "Mật khẩu phải có ít nhất 01 ký tự đặc biệt, và 01 chữ cái viết hoa.");
+                    //ModelState.AddModelError("ErrorResult", result.Errors.ToString());
+                    //return BadRequest(ModelState);
+
                     return GetErrorResult(result);
                 }
                 
@@ -419,6 +401,8 @@ namespace ConfessionAPI.Controllers
             if (!result.Succeeded)
             {
                 return GetErrorResult(result); 
+                
+                
             }
             return Ok();
         }

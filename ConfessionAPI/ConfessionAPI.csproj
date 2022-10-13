@@ -179,8 +179,10 @@
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
-    <Compile Include="Areas\Admin\Controllers\AdminAccountController.cs" />
-    <Compile Include="Areas\Admin\Controllers\AdminController.cs" />
+    <Compile Include="Areas\Admin\Controllers\AdmCategoryController.cs" />
+    <Compile Include="Areas\Admin\Controllers\AdmPostController.cs" />
+    <Compile Include="Areas\Admin\Controllers\AdmUserController.cs" />
+    <Compile Include="Areas\Admin\Controllers\AdmController.cs" />
     <Compile Include="Areas\HelpPage\ApiDescriptionExtensions.cs" />
     <Compile Include="Areas\HelpPage\App_Start\HelpPageConfig.cs" />
     <Compile Include="Areas\HelpPage\Controllers\HelpController.cs" />
@@ -210,6 +212,7 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Areas\User\Controllers\UserAccountController.cs" />
+    <Compile Include="Areas\User\Controllers\UserCommentController.cs" />
     <Compile Include="Areas\User\Controllers\UserController.cs" />
     <Compile Include="Areas\User\Controllers\UserPostController.cs" />
     <Compile Include="Areas\User\Data\PostCreateViewModel.cs" />
@@ -235,6 +238,10 @@
     <Compile Include="Migrations\202210030746457_AddSomeInfo.cs" />
     <Compile Include="Migrations\202210030746457_AddSomeInfo.designer.cs">
       <DependentUpon>202210030746457_AddSomeInfo.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202210100656260_UpdateComment.cs" />
+    <Compile Include="Migrations\202210100656260_UpdateComment.designer.cs">
+      <DependentUpon>202210100656260_UpdateComment.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
@@ -355,6 +362,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202210030746457_AddSomeInfo.resx">
       <DependentUpon>202210030746457_AddSomeInfo.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202210100656260_UpdateComment.resx">
+      <DependentUpon>202210100656260_UpdateComment.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

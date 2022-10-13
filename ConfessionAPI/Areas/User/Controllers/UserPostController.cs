@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.ModelConfiguration.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -108,21 +109,18 @@ namespace ConfessionAPI.Areas.User.Controllers
                         };
                         db.Pictures.Add(picture);
                     }
+                    db.SaveChanges();
                     #endregion
 
-                    db.SaveChanges();
-                    result = post;
                 }
-
                 #endregion
-
+                return Json(result);
             }
             catch (Exception e)
             {
                 ModelState.AddModelError("Error", e.Message);
                 return BadRequest(ModelState);
             }
-            return Json(result);
         }
 
         [HttpPost]
@@ -184,6 +182,7 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                     List<string> listPath = new List<string>();
                     var provider = new MultipartFormDataStreamProvider(root);
+                    
 
                     if (!Directory.Exists(root))
                     {
@@ -317,30 +316,42 @@ namespace ConfessionAPI.Areas.User.Controllers
                 var userId = User.Identity.GetUserId();
                 var postLikeCheck = db.PostLikes.SingleOrDefault(x => x.UserID == userId && x.Id == idPost);
                 var postLike = new PostLike();
-                int totalLike;
+                int totalLike, totalDislike;
+
                 if (postLikeCheck == null)
                 {
                     postLike.Id = idPost;
                     postLike.UserID = User.Identity.GetUserId();
                     postLike.TimeLike = DateTime.Now;
+                    postLike.IsLike = true;
 
                     db.PostLikes.Add(postLike);
                     db.SaveChanges();
-
-                    totalLike = db.PostLikes.Count();
-                    post.Like = totalLike;
-                    db.Entry(post).State = EntityState.Modified;
                 }
                 else
                 {
-                    db.PostLikes.Remove(postLikeCheck);
+                    if (postLikeCheck.IsLike == false)
+                    {
+                        postLikeCheck.TimeLike = DateTime.Now;
+                        postLikeCheck.IsLike = true;
+                        db.Entry(postLikeCheck).State = EntityState.Modified;
+                    }
+                    else
+                    {
+                        db.PostLikes.Remove(postLikeCheck);
+                    }
                     db.SaveChanges();
-
-                    totalLike = db.PostLikes.Count();
-                    post.Like = totalLike;
-                    db.Entry(post).State = EntityState.Modified;
                 }
 
+                totalLike = db.PostLikes.Where(x => x.IsLike == true
+                                                    && x.UserID == userId
+                                                    && x.Id == idPost).Count();
+                totalDislike = db.PostLikes.Where(x => x.IsLike == false
+                                                       && x.UserID == userId
+                                                       && x.Id == idPost).Count();
+                post.Like = totalLike;
+                post.Dislike = totalDislike;
+                db.Entry(post).State = EntityState.Modified;
                 db.SaveChanges();
                 return Json(post);
 
@@ -352,6 +363,67 @@ namespace ConfessionAPI.Areas.User.Controllers
             }
         }
 
+
+        [HttpPost]
+        public async Task<IHttpActionResult> Dislike()
+        {
+            try
+            {
+                var post = new Post();
+                var idPost = Guid.Parse(HttpContext.Current.Request["Id"]);
+                post = db.Posts.Find(idPost);
+                if (post == null)
+                {
+                    ModelState.AddModelError("Post", "Post doesn't exist");
+                    return BadRequest(ModelState);
+                }
+                var userId = User.Identity.GetUserId();
+                var postLikeCheck = db.PostLikes.SingleOrDefault(x => x.UserID == userId && x.Id == idPost);
+                var postLike = new PostLike();
+                int totalLike, totalDislike;
+
+                if (postLikeCheck == null)
+                {
+                    postLike.Id = idPost;
+                    postLike.UserID = User.Identity.GetUserId();
+                    postLike.TimeLike = DateTime.Now;
+                    postLike.IsLike = false;
+
+                    db.PostLikes.Add(postLike);
+                    db.SaveChanges();
+                }
+                else
+                {
+                    if (postLikeCheck.IsLike)
+                    {
+                        postLikeCheck.TimeLike = DateTime.Now;
+                        postLikeCheck.IsLike = false;
+                        db.Entry(postLikeCheck).State = EntityState.Modified;
+                    }
+                    else
+                    {
+                        db.PostLikes.Remove(postLikeCheck);
+                    }
+                    db.SaveChanges();
+                }
+
+                totalLike = db.PostLikes.Where(x => x.IsLike == true
+                                                    && x.UserID == userId
+                                                    && x.Id == idPost).Count();
+                totalDislike = db.PostLikes.Where(x => x.IsLike == false
+                                                       && x.UserID == userId
+                                                       && x.Id == idPost).Count();
+                post.Like = totalLike;
+                post.Dislike = totalDislike;
+                return Json(post);
+
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
         [HttpPost]
         public async Task<IHttpActionResult> Upload(Guid id)
         {

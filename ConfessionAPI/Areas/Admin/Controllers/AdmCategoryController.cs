@@ -69,7 +69,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError("Error", $"{category.Name} doesn  exist");
+                    ModelState.AddModelError("Error", $"{category.Name} doesn't exist");
                     return BadRequest(ModelState);
                 }
                 return Json(category);
@@ -80,5 +80,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                 return BadRequest(ModelState);
             }
         }
+
+        
     }
 }

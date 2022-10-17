@@ -48,7 +48,7 @@ namespace ConfessionAPI.Controllers
                         post.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
                     }
 
-                    if (post.Avatar != null)
+                    if (account.UserProfile.Avatar != null)
                     {
                         post.Avatar = account.UserProfile.Avatar;
 

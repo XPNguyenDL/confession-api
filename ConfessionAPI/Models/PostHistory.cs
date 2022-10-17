@@ -38,6 +38,7 @@ namespace ConfessionAPI.Models
         // ======================================================
         // Navigation properties
         // ======================================================
+
         [JsonIgnore]
         public virtual Account Account { get; set; }
         [JsonIgnore]

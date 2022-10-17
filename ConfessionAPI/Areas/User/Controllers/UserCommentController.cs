@@ -50,7 +50,7 @@ namespace ConfessionAPI.Areas.User.Controllers
 
             return groupCmts;
         }
-
+        
         [HttpPost]
         public IHttpActionResult Index()
         {
@@ -104,17 +104,17 @@ namespace ConfessionAPI.Areas.User.Controllers
         //            postLike.Id = idPost;
         //            postLike.UserID = User.Identity.GetUserId();
         //            postLike.TimeLike = DateTime.Now;
-        //            postLike.IsLike = true;
+        //            postLike.IsLiked = true;
 
         //            db.PostLikes.Add(postLike);
         //            db.SaveChanges();
         //        }
         //        else
         //        {
-        //            if (postLikeCheck.IsLike == false)
+        //            if (postLikeCheck.IsLiked == false)
         //            {
         //                postLikeCheck.TimeLike = DateTime.Now;
-        //                postLikeCheck.IsLike = true;
+        //                postLikeCheck.IsLiked = true;
         //                db.Entry(postLikeCheck).State = EntityState.Modified;
         //            }
         //            else
@@ -124,10 +124,10 @@ namespace ConfessionAPI.Areas.User.Controllers
         //            db.SaveChanges();
         //        }
 
-        //        totalLike = db.PostLikes.Where(x => x.IsLike == true
+        //        totalLike = db.PostLikes.Where(x => x.IsLiked == true
         //                                            && x.UserID == userId
         //                                            && x.Id == idPost).Count();
-        //        totalDislike = db.PostLikes.Where(x => x.IsLike == false
+        //        totalDislike = db.PostLikes.Where(x => x.IsLiked == false
         //                                               && x.UserID == userId
         //                                               && x.Id == idPost).Count();
         //        post.Like = totalLike;
@@ -144,66 +144,65 @@ namespace ConfessionAPI.Areas.User.Controllers
         //    }
         //}
 
-        //[HttpPost]
-        //public async Task<IHttpActionResult> Dislike()
-        //{
-        //    try
-        //    {
-        //        var comment = new Comment();
-        //        var idCmt = Guid.Parse(HttpContext.Current.Request["Id"]);
-        //        comment = db.Comments.Find(idCmt);
-        //        if (comment == null)
-        //        {
-        //            ModelState.AddModelError("Comment", "Comment doesn't exist");
-        //            return BadRequest(ModelState);
-        //        }
-        //        var userId = User.Identity.GetUserId();
-        //        var cmtLikeCheck = db.CommentLikes.SingleOrDefault(x => x.UserID == userId && x.Id == idCmt);
-        //        var cmtLike = new CommentLike();
-        //        int totalLike, totalDislike;
+        [HttpPost]
+        public async Task<IHttpActionResult> Dislike()
+        {
+            try
+            {
+                var comment = new Comment();
+                var idCmt = Guid.Parse(HttpContext.Current.Request["Id"]);
+                comment = db.Comments.Find(idCmt);
+                if (comment == null)
+                {
+                    ModelState.AddModelError("Comment", "Comment doesn't exist");
+                    return BadRequest(ModelState);
+                }
+                var userId = User.Identity.GetUserId();
+                var cmtLikeCheck = db.CommentLikes.SingleOrDefault(x => x.UserID == userId && x.Id == idCmt);
+                var cmtLike = new CommentLike();
+                int totalLike, totalDislike;
 
-        //        if (cmtLikeCheck == null)
-        //        {
-        //            cmtLike.Id = idCmt;
-        //            cmtLike.UserID = User.Identity.GetUserId();
-        //            cmtLike.TimeLike = DateTime.Now;
-        //            //cmtLike.IsLike = false;
+                if (cmtLikeCheck == null)
+                {
+                    cmtLike.Id = idCmt;
+                    cmtLike.UserID = User.Identity.GetUserId();
+                    cmtLike.TimeLike = DateTime.Now;
+                    //cmtLike.IsLiked = false;
 
-        //            db.CommentLikes.Add(cmtLike);
-        //            db.SaveChanges();
-        //        }
-        //        else
-        //        {
-        //            if (cmtLikeCheck.IsLike)
-        //            {
-        //                cmtLikeCheck.TimeLike = DateTime.Now;
-        //                cmtLikeCheck.IsLike = false;
-        //                db.Entry(cmtLikeCheck).State = EntityState.Modified;
-        //            }
-        //            else
-        //            {
-        //                db.CommentLikes.Remove(cmtLikeCheck);
-        //            }
-        //            db.SaveChanges();
-        //        }
+                    db.CommentLikes.Add(cmtLike);
+                    db.SaveChanges();
+                }
+                else
+                {
+                    if (cmtLikeCheck.IsLiked)
+                    {
+                        cmtLikeCheck.TimeLike = DateTime.Now;
+                        cmtLikeCheck.IsLiked = false;
+                        db.Entry(cmtLikeCheck).State = EntityState.Modified;
+                    }
+                    else
+                    {
+                        db.CommentLikes.Remove(cmtLikeCheck);
+                    }
+                    db.SaveChanges();
+                }
 
-        //        totalLike = db.CommentLikes.Where(x => x.IsLike == true
-        //                                            && x.UserID == userId
-        //                                            && x.Id == idCmt).Count();
-        //        totalDislike = db.CommentLikes.Where(x => x.IsLike == false
-        //                                               && x.UserID == userId
-        //                                               && x.Id == idCmt).Count();
-        //        comment.Like = totalLike;
-        //        comment.Dislike = totalDislike;
-        //        db.SaveChanges();
-        //        return Json(comment);
-
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        ModelState.AddModelError("Error", e.Message);
-        //        return BadRequest(ModelState);
-        //    }
-        //}
+                totalLike = db.CommentLikes.Where(x => x.IsLiked == true
+                                                    && x.UserID == userId
+                                                    && x.Id == idCmt).Count();
+                totalDislike = db.CommentLikes.Where(x => x.IsLiked == false
+                                                       && x.UserID == userId
+                                                       && x.Id == idCmt).Count();
+                comment.Like = totalLike;
+                comment.Dislike = totalDislike;
+                db.SaveChanges();
+                return Json(comment);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
     }
 }

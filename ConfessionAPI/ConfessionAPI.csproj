@@ -219,6 +219,7 @@
     <Compile Include="Areas\User\UserAreaRegistration.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\CategoryController.cs" />
+    <Compile Include="Controllers\CommentController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ImageController.cs" />
     <Compile Include="Controllers\PostController.cs" />
@@ -243,12 +244,17 @@
     <Compile Include="Migrations\202210100656260_UpdateComment.designer.cs">
       <DependentUpon>202210100656260_UpdateComment.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202210131712194_AddNotificationAndFix.cs" />
+    <Compile Include="Migrations\202210131712194_AddNotificationAndFix.designer.cs">
+      <DependentUpon>202210131712194_AddNotificationAndFix.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\Account.cs" />
     <Compile Include="Models\Category.cs" />
     <Compile Include="Models\Comment.cs" />
+    <Compile Include="Models\Notification.cs" />
     <Compile Include="Models\Picture.cs" />
     <Compile Include="Models\Post.cs" />
     <Compile Include="Models\PostHistory.cs" />
@@ -365,6 +371,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202210100656260_UpdateComment.resx">
       <DependentUpon>202210100656260_UpdateComment.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202210131712194_AddNotificationAndFix.resx">
+      <DependentUpon>202210131712194_AddNotificationAndFix.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

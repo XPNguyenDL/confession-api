@@ -65,7 +65,15 @@ namespace ConfessionAPI.Models
         [Column(Order = 2)]
         [MaxLength(500)]
         public string UserID { get; set; }
+
         public DateTime TimeLike { get; set; }
+
+        public bool IsLiked { get; set; }
+
+        // ======================================================
+        // Navigation properties
+        // ======================================================
+
         public virtual Comment Comment { get; set; }
     }
 }

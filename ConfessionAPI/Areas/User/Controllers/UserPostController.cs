@@ -20,6 +20,23 @@ namespace ConfessionAPI.Areas.User.Controllers
     public class UserPostController : UserController
     {
         private ConfessionDbContext db = new ConfessionDbContext();
+
+        [HttpPost]
+        public IHttpActionResult PostLike()
+        {
+            try
+            {
+                var postId = Guid.Parse(HttpContext.Current.Request["Id"]);
+                var postLikes = db.PostLikes.Where(s => s.UserID == User.Identity.GetUserId()
+                                            && s.Id == postId).ToList();
+                return Json(postLikes);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
         
         [HttpPost]
         public async Task<IHttpActionResult> Create()
@@ -323,17 +340,17 @@ namespace ConfessionAPI.Areas.User.Controllers
                     postLike.Id = idPost;
                     postLike.UserID = User.Identity.GetUserId();
                     postLike.TimeLike = DateTime.Now;
-                    postLike.IsLike = true;
+                    postLike.IsLiked = true;
 
                     db.PostLikes.Add(postLike);
                     db.SaveChanges();
                 }
                 else
                 {
-                    if (postLikeCheck.IsLike == false)
+                    if (postLikeCheck.IsLiked == false)
                     {
                         postLikeCheck.TimeLike = DateTime.Now;
-                        postLikeCheck.IsLike = true;
+                        postLikeCheck.IsLiked = true;
                         db.Entry(postLikeCheck).State = EntityState.Modified;
                     }
                     else
@@ -343,10 +360,10 @@ namespace ConfessionAPI.Areas.User.Controllers
                     db.SaveChanges();
                 }
 
-                totalLike = db.PostLikes.Where(x => x.IsLike == true
+                totalLike = db.PostLikes.Where(x => x.IsLiked == true
                                                     && x.UserID == userId
                                                     && x.Id == idPost).Count();
-                totalDislike = db.PostLikes.Where(x => x.IsLike == false
+                totalDislike = db.PostLikes.Where(x => x.IsLiked == false
                                                        && x.UserID == userId
                                                        && x.Id == idPost).Count();
                 post.Like = totalLike;
@@ -387,17 +404,17 @@ namespace ConfessionAPI.Areas.User.Controllers
                     postLike.Id = idPost;
                     postLike.UserID = User.Identity.GetUserId();
                     postLike.TimeLike = DateTime.Now;
-                    postLike.IsLike = false;
+                    postLike.IsLiked = false;
 
                     db.PostLikes.Add(postLike);
                     db.SaveChanges();
                 }
                 else
                 {
-                    if (postLikeCheck.IsLike)
+                    if (postLikeCheck.IsLiked)
                     {
                         postLikeCheck.TimeLike = DateTime.Now;
-                        postLikeCheck.IsLike = false;
+                        postLikeCheck.IsLiked = false;
                         db.Entry(postLikeCheck).State = EntityState.Modified;
                     }
                     else
@@ -407,10 +424,10 @@ namespace ConfessionAPI.Areas.User.Controllers
                     db.SaveChanges();
                 }
 
-                totalLike = db.PostLikes.Where(x => x.IsLike == true
+                totalLike = db.PostLikes.Where(x => x.IsLiked == true
                                                     && x.UserID == userId
                                                     && x.Id == idPost).Count();
-                totalDislike = db.PostLikes.Where(x => x.IsLike == false
+                totalDislike = db.PostLikes.Where(x => x.IsLiked == false
                                                        && x.UserID == userId
                                                        && x.Id == idPost).Count();
                 post.Like = totalLike;

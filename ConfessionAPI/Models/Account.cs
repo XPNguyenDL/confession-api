@@ -19,12 +19,19 @@ namespace ConfessionAPI.Models
             // Add custom user claims here
             return userIdentity;
         }
+
+
         [DataMember]
         public virtual UserProfile UserProfile { get; set; }
+
         [DataMember]
         public virtual IList<Comment> Comments { get; set; }
+
         [DataMember]
         public virtual IList<PostHistory> PostHistory { get; set; }
+
+        [DataMember]
+        public virtual IList<Notification> Notifications { get; set; }
 
         [NotMapped]
         public List<string> RoleTemps { get; set; }

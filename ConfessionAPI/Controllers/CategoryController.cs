@@ -15,7 +15,7 @@ using ConfessionAPI.Models;
 
 namespace ConfessionAPI.Controllers
 {
-    public class CategoryController : AdmController
+    public class CategoryController : ApiController
     {
         ConfessionDbContext db = new ConfessionDbContext();
 
@@ -25,32 +25,7 @@ namespace ConfessionAPI.Controllers
             var result = db.Categories.ToList();
             return Json(result);
         }
-
-        [HttpPost]
-        public IHttpActionResult Create(Category category)
-        {
-            try
-            {
-                if (db.Categories.SingleOrDefault(x => x.Alias == category.Alias) != null)
-                {
-                    ModelState.AddModelError("Error", $"{category.Alias} is exist");
-                    return BadRequest(ModelState);
-                }
-                if (ModelState.IsValid)
-                {
-                    category.Id = Guid.NewGuid();
-                    category.Active = true;
-                    db.Categories.Add(category);
-                    db.SaveChanges();
-                }
-                return Json(category);
-            }
-            catch (Exception e)
-            {
-                ModelState.AddModelError("Error", e.Message);
-                return BadRequest(ModelState);
-            }
-        }
+        
 
         
     }

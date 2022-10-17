@@ -50,6 +50,11 @@ namespace ConfessionAPI.Models
                 return string.Format("{0} {1}", FirstName, LastName);
             }
         }
+
+        // ======================================================
+        // Navigation properties
+        // ======================================================
+
         [JsonIgnore]
         public virtual Account Account { get; set; }
     }

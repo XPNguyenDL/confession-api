@@ -32,8 +32,13 @@ namespace ConfessionAPI.Areas.User.Controllers
                 {
                     var role = db.Roles.Find(userRole.RoleId);
                     temp.Add(role.Name);
-                    account.RoleTemps = temp;
                 }
+
+                if (account.UserProfile.Avatar == null)
+                {
+                    account.UserProfile.Avatar = "";
+                }
+                account.RoleTemps = temp;
                 return Json(account);
             }
             catch (Exception e)
@@ -53,6 +58,7 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                 var userId = User.Identity.GetUserId();
                 var user = db.IdentityUsers.Find(userId);
+                userUpdate.UserProfile.Id = user.UserProfile.Id;
                 user.UserProfile = userUpdate.UserProfile;
                 user.Email = userUpdate.Email;
                 user.PhoneNumber = userUpdate.PhoneNumber;

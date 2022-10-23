@@ -67,6 +67,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                         Active = true,
                         Status = PostStatus.Violate,
                         CreatedTime = DateTime.Now,
+                        PrivateMode = createModel.IsPrivate,
                         Categories = new List<Category>(),
                     };
 

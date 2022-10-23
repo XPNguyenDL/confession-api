@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Web;
 using Newtonsoft.Json;
 
@@ -34,11 +35,22 @@ namespace ConfessionAPI.Models
 
         [ForeignKey("Replier")]
         public string AccountId { get; set; } // Tài khoản trả lời
+
         [ForeignKey("Post")]
         public Guid PostId { get; set; } // Mã bài viết
 
         [Timestamp]
         public byte[] RowVersion { get; set; }
+
+        // ======================================================
+        // Not Mapped
+        // ======================================================
+
+        [NotMapped]
+        public string NickName { get; set; }
+
+        [NotMapped]
+        public string Avatar { get; set; }
 
         // ======================================================
         // Navigation properties
@@ -48,7 +60,7 @@ namespace ConfessionAPI.Models
         public virtual Account Replier { get; set; }
         [JsonIgnore]
         public virtual Post Post { get; set; }
-        [JsonIgnore]
+        [DataMember]
         public virtual IList<CommentLike> CommentLikes { get; set; }
         //[JsonIgnore]
         public virtual IList<Comment> ChildComments { get; set; }
@@ -73,7 +85,7 @@ namespace ConfessionAPI.Models
         // ======================================================
         // Navigation properties
         // ======================================================
-
+        [JsonIgnore]
         public virtual Comment Comment { get; set; }
     }
 }

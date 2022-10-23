@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Web;
 using System.Web.Http;
 using ConfessionAPI.DAL;
 using ConfessionAPI.Models;
@@ -81,6 +82,26 @@ namespace ConfessionAPI.Areas.Admin.Controllers
             }
         }
 
-        
+        [HttpPost]
+        public IHttpActionResult Delete()
+        {
+            try
+            {
+                var cateId = Guid.Parse(HttpContext.Current.Request["id"]);
+                var oldCategory = db.Categories.SingleOrDefault(s => s.Id == cateId);
+                if (oldCategory != null)
+                {
+                    db.Categories.Remove(oldCategory);
+                    db.SaveChanges();
+                }
+                var categories = db.Categories.ToList();
+                return Json(categories);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
     }
 }

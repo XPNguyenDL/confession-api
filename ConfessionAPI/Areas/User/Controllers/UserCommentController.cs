@@ -32,6 +32,21 @@ namespace ConfessionAPI.Areas.User.Controllers
                 .ToList();
             foreach (var subCmt in comment.ChildComments)
             {
+                var userId = subCmt.AccountId;
+                var account = db.IdentityUsers.Find(userId);
+                if (account != null)
+                {
+                    if (account.UserProfile.NickName != null)
+                    {
+                        subCmt.NickName = account.UserProfile.NickName;
+                    }
+                    else
+                    {
+                        subCmt.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
+                    }
+
+                    subCmt.Avatar = account.UserProfile.Avatar;
+                }
                 AddSubComment(subCmt, allCmts);
             }
         }
@@ -45,6 +60,21 @@ namespace ConfessionAPI.Areas.User.Controllers
                 .ToList();
             foreach (var cmt in groupCmts)
             {
+                var userId = cmt.AccountId;
+                var account = db.IdentityUsers.Find(userId);
+                if (account != null)
+                {
+                    if (account.UserProfile.NickName != null)
+                    {
+                        cmt.NickName = account.UserProfile.NickName;
+                    }
+                    else
+                    {
+                        cmt.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
+                    }
+
+                    cmt.Avatar = account.UserProfile.Avatar;
+                }
                 AddSubComment(cmt, allCmts);
             }
 
@@ -66,6 +96,7 @@ namespace ConfessionAPI.Areas.User.Controllers
             {
                 var cmtRequest = HttpContext.Current.Request["comment"];
                 var cmt = JsonConvert.DeserializeObject<Comment>(cmtRequest);
+
                 cmt.Id = Guid.NewGuid();
                 cmt.AccountId = User.Identity.GetUserId();
                 cmt.PostTime = DateTime.Now;

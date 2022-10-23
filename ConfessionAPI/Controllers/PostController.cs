@@ -20,47 +20,106 @@ namespace ConfessionAPI.Controllers
     {
         private ConfessionDbContext db = new ConfessionDbContext();
 
+        private void AddSubComment(Comment comment, List<Comment> allCmts)
+        {
+            comment.ChildComments = allCmts
+                .Where(x => x.ParentId == comment.Id)
+                .ToList();
+            foreach (var subCmt in comment.ChildComments)
+            {
+                var userId = subCmt.AccountId;
+                var account = db.IdentityUsers.Find(userId);
+                if (account != null)
+                {
+                    if (account.UserProfile.NickName != null)
+                    {
+                        subCmt.NickName = account.UserProfile.NickName;
+                    }
+                    else
+                    {
+                        subCmt.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
+                    }
+
+                    subCmt.Avatar = account.UserProfile.Avatar;
+                }
+                AddSubComment(subCmt, allCmts);
+            }
+        }
+
+        private List<Comment> PolulateComment(Guid postId)
+        {
+            var allCmts = db.Comments.Where(x => x.PostId == postId).ToList();
+
+            var groupCmts = allCmts
+                .Where(x => !x.ParentId.HasValue || x.ParentId == null)
+                .ToList();
+            foreach (var cmt in groupCmts)
+            {
+                var userId = cmt.AccountId;
+                var account = db.IdentityUsers.Find(userId);
+                if (account != null)
+                {
+                    if (account.UserProfile.NickName != null)
+                    {
+                        cmt.NickName = account.UserProfile.NickName;
+                    }
+                    else
+                    {
+                        cmt.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
+                    }
+
+                    cmt.Avatar = account.UserProfile.Avatar;
+                }
+                AddSubComment(cmt, allCmts);
+            }
+
+            return groupCmts;
+        }
+
+        private List<Post> FilterPosts(List<Post> posts)
+        {
+            Account account = new Account();
+            foreach (var post in posts)
+            {
+                var postHistorys = db.PostHistories.Where(x => x.PostId == post.Id).ToList();
+                foreach (var postHistory in postHistorys)
+                {
+                    account = db.IdentityUsers.Find(postHistory.AccountId);
+                    break;
+                }
+
+                post.Comments = PolulateComment(post.Id);
+
+                if (account.UserProfile.NickName != null)
+                {
+                    post.NickName = account.UserProfile.NickName;
+                }
+                else
+                {
+                    post.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
+                }
+
+                if (account.UserProfile.Avatar != null || post.PrivateMode)
+                {
+                    post.Avatar = account.UserProfile.Avatar;
+                }
+                else
+                {
+                    post.Avatar = "";
+                }
+            }
+            posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
+            return posts;
+        }
+
+
         [HttpGet]
         public IHttpActionResult Index()
         {
             try
             {
                 var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
-                //posts = posts.Where(s => s.Active == true).ToList();
-
-                Account account = new Account();
-                PostHistory history = new PostHistory();
-                foreach (var post in posts)
-                {
-                    var postHistorys = db.PostHistories.Where(x => x.PostId == post.Id).ToList();
-                    foreach (var postHistory in postHistorys)
-                    {
-                        account = db.IdentityUsers.Find(postHistory.AccountId);
-                        break;
-                    }
-
-                    if (account.UserProfile.NickName != null)
-                    {
-                        post.NickName = account.UserProfile.NickName;
-                    }
-                    else
-                    {
-                        post.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
-                    }
-
-                    if (account.UserProfile.Avatar != null)
-                    {
-                        post.Avatar = account.UserProfile.Avatar;
-
-                    }
-                    else
-                    {
-                        post.Avatar = "";
-                    }
-
-                }
-                //posts.Where(x => (x.PostHistories = new List<PostHistory>()).Count() == 0).ToList();
-                posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
+                posts = FilterPosts(posts);
 
                 return Json(posts);
             }
@@ -95,8 +154,8 @@ namespace ConfessionAPI.Controllers
                     }
 
                 }
+                posts = FilterPosts(posts);
 
-                posts = posts.OrderBy(x => x.CreatedTime).ToList();
                 return Json(posts);
             }
             catch (Exception ex)
@@ -145,10 +204,7 @@ namespace ConfessionAPI.Controllers
                         }
                     }
                 }
-
-
-                postResult = postResult.OrderByDescending(x => x.CreatedTime).ToList();
-
+                posts = FilterPosts(posts);
                 return Json(postResult);
             }
             catch (Exception e)

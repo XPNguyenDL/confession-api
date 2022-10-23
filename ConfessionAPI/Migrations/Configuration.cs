@@ -11,7 +11,8 @@ namespace ConfessionAPI.Migrations
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = false;
+            // Fix lose data
+            AutomaticMigrationsEnabled = true;
         }
 
         protected override void Seed(ConfessionAPI.DAL.ConfessionDbContext context)

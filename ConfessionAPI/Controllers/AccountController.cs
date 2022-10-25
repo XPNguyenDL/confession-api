@@ -322,7 +322,12 @@ namespace ConfessionAPI.Controllers
             {
                 if (db.IdentityUsers.SingleOrDefault(x => x.UserName == model.UserName) != null)
                 {
-                    ModelState.AddModelError("Error", "Tên đăng nhập đã tồn tại.");
+                    ModelState.AddModelError("Error", $"Tên '{model.NickName}' đã tồn tại.");
+                    return BadRequest(ModelState);
+                }
+                if (db.IdentityUsers.SingleOrDefault(x => x.Email == model.Email) != null)
+                {
+                    ModelState.AddModelError("Error", $"Email '{model.Email}' đã tồn tại.");
                     return BadRequest(ModelState);
                 }
                 if (!ModelState.IsValid)
@@ -343,7 +348,8 @@ namespace ConfessionAPI.Controllers
                         Gender = Gender.Other,
                         Major = model.UserName,
                         Birthday = DateTime.Now,
-                        NickName = model.NickName
+                        NickName = model.NickName,
+                        Avatar = "Default/Avatar_default.png"
                     }
                 };
 

@@ -40,7 +40,6 @@ namespace ConfessionAPI.Controllers
                     {
                         subCmt.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
                     }
-
                     subCmt.Avatar = account.UserProfile.Avatar;
                 }
                 AddSubComment(subCmt, allCmts);

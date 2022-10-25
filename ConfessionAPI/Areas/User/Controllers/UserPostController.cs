@@ -41,9 +41,9 @@ namespace ConfessionAPI.Areas.User.Controllers
         [HttpPost]
         public async Task<IHttpActionResult> Create()
         {
-            Post result = new Post();
             try
             {
+                Post result = new Post();
                 var data = HttpContext.Current.Request["Post"];
                 PostCreateViewModel createModel = JsonConvert.DeserializeObject<PostCreateViewModel>(data);
 
@@ -73,6 +73,7 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                     // Add caterories
                     UpdatePostCategories(post, createModel.SelectedCategories);
+                    result = post;
                     db.Posts.Add(post);
 
                     // Create PostHistory
@@ -94,13 +95,13 @@ namespace ConfessionAPI.Areas.User.Controllers
                     List<string> listPath = new List<string>();
                     var ctx = HttpContext.Current;
                     var root = ctx.Server.MapPath("~/Uploads/Pictures/Post/" + post.Id);
-                    var provider = new MultipartFormDataStreamProvider(root);
 
                     if (!Directory.Exists(root))
                     {
                         Directory.CreateDirectory(root);
                     }
 
+                    var provider = new MultipartFormDataStreamProvider(root);
                     await Request.Content.ReadAsMultipartAsync(provider)
                         .ContinueWith(async (a) =>
                         {
@@ -148,6 +149,7 @@ namespace ConfessionAPI.Areas.User.Controllers
             {
                 Post post = new Post();
                 var temp = HttpContext.Current.Request["Post"];
+                var totalFiles = HttpContext.Current.Request.Files.Count;
                 PostCreateViewModel createModel = JsonConvert.DeserializeObject<PostCreateViewModel>(temp);
                 var userId = User.Identity.GetUserId();
 
@@ -160,7 +162,6 @@ namespace ConfessionAPI.Areas.User.Controllers
                 }
                 if (postHistory != null)
                 {
-                    var oldPost = db.Posts.Find(postHistory.PostId);
                     post = db.Posts.Find(postHistory.PostId);
                     if (post == null)
                     {
@@ -175,24 +176,24 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                     var history = new PostHistory()
                     {
-                        Id = Guid.NewGuid(),
+                        Id = postHistory.Id,
                         AccountId = User.Identity.GetUserId(),
                         ActionTime = DateTime.Now,
                         PostId = post.Id,
                         HistoryAction = PostHistoryAction.UpdateFull,
-                        OriginalPost = JsonConvert.SerializeObject(oldPost),
-                        ModifiedPost = JsonConvert.SerializeObject(post)
                     };
 
-                    db.PostHistories.Add(history);
+                    postHistory.ActionTime = DateTime.Now;
+                    postHistory.HistoryAction = PostHistoryAction.UpdateFull;
+
+                    db.Entry(postHistory).State = EntityState.Modified;
 
                     // còn bug
 
                     var ctx = HttpContext.Current;
                     var root = ctx.Server.MapPath("~/Uploads/Pictures/Post/" + post.Id);
-                    var provider = new MultipartFormDataStreamProvider(root);
-
-                    if (provider.FormData.Count != 0)
+                    
+                    if (totalFiles > 0)
                     {
                         if (Directory.Exists(root))
                         {
@@ -212,7 +213,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                         {
                             Directory.CreateDirectory(root);
                         }
-
+                        var provider = new MultipartFormDataStreamProvider(root);
                         await Request.Content.ReadAsMultipartAsync(provider)
                             .ContinueWith(async (a) =>
                             {
@@ -240,8 +241,6 @@ namespace ConfessionAPI.Areas.User.Controllers
                         }
                         #endregion
                     }
-
-
                     db.SaveChanges();
                 }
                 return Json(post);
@@ -308,6 +307,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                         db.Pictures.Remove(item);
                     }
                     Directory.Delete(root, true);
+                    ProcessDirectory(ctx.Server.MapPath("~/Uploads/Pictures/Post/"));
                 }
 
                 // Delete PostHistory
@@ -328,6 +328,19 @@ namespace ConfessionAPI.Areas.User.Controllers
             {
                 ModelState.AddModelError("Error", e.Message);
                 return BadRequest(ModelState);
+            }
+        }
+
+        private void ProcessDirectory(string startLocation)
+        {
+            foreach (var directory in Directory.GetDirectories(startLocation))
+            {
+                ProcessDirectory(directory);
+                if (Directory.GetFiles(directory).Length == 0 &&
+                    Directory.GetDirectories(directory).Length == 0)
+                {
+                    Directory.Delete(directory, false);
+                }
             }
         }
 

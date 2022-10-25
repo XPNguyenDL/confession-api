@@ -24,6 +24,7 @@ namespace ConfessionAPI.Controllers
         {
             comment.ChildComments = allCmts
                 .Where(x => x.ParentId == comment.Id)
+                .OrderByDescending(s => s.PostTime)
                 .ToList();
             foreach (var subCmt in comment.ChildComments)
             {
@@ -48,8 +49,9 @@ namespace ConfessionAPI.Controllers
 
         private List<Comment> PolulateComment(Guid postId)
         {
-            var allCmts = db.Comments.Where(x => x.PostId == postId).ToList();
-
+            var allCmts = db.Comments.Where(x => x.PostId == postId)
+                .OrderByDescending(s => s.PostTime)
+                .ToList();
             var groupCmts = allCmts
                 .Where(x => !x.ParentId.HasValue || x.ParentId == null)
                 .ToList();
@@ -89,6 +91,8 @@ namespace ConfessionAPI.Controllers
                 }
 
                 post.Comments = PolulateComment(post.Id);
+
+                post.TotalCmt = db.Comments.Where(s => s.PostId == post.Id).Count();
 
                 if (account.UserProfile.NickName != null)
                 {
@@ -213,5 +217,21 @@ namespace ConfessionAPI.Controllers
                 return BadRequest(ModelState);
             }
         }
+
+        [HttpGet]
+        public IHttpActionResult HotPost()
+        {
+            var now = DateTime.Now.AddDays(-7);
+            var hotPosts = db.Posts.ToList();
+            foreach (var post in hotPosts)
+            {
+                post.Like = post.PostLikes.Where(s => s.IsLiked == true && s.TimeLike >= now).Count();
+            }
+
+            hotPosts = FilterPosts(hotPosts);
+            hotPosts = hotPosts.OrderByDescending(x => x.Like).ToList();
+            return Json(hotPosts.Take(10));
+        }
+        
     }
 }

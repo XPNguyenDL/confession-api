@@ -37,7 +37,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                 return BadRequest(ModelState);
             }
         }
-        
+
         [HttpPost]
         public async Task<IHttpActionResult> Create()
         {
@@ -144,14 +144,15 @@ namespace ConfessionAPI.Areas.User.Controllers
         [HttpPost]
         public async Task<IHttpActionResult> Edit()
         {
-            Post post = new Post();
             try
             {
+                Post post = new Post();
                 var temp = HttpContext.Current.Request["Post"];
                 PostCreateViewModel createModel = JsonConvert.DeserializeObject<PostCreateViewModel>(temp);
                 var userId = User.Identity.GetUserId();
 
-                var postHistory = db.PostHistories.SingleOrDefault(x => x.AccountId == userId && x.PostId == createModel.Id);
+                //var postHistory = db.PostHistories.SingleOrDefault(x => x.AccountId == userId && x.PostId == createModel.Id);
+                var postHistory = db.PostHistories.Where(x => x.AccountId == userId && x.PostId == createModel.Id).Take(1).SingleOrDefault();
                 if (postHistory == null)
                 {
                     ModelState.AddModelError("postHistory", "Error account update!");
@@ -185,57 +186,65 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                     db.PostHistories.Add(history);
 
+                    // còn bug
+
                     var ctx = HttpContext.Current;
                     var root = ctx.Server.MapPath("~/Uploads/Pictures/Post/" + post.Id);
-                    if (Directory.Exists(root))
-                    {
-                        var pictures = db.Pictures.Where(x => x.PostId == post.Id);
-                        foreach (var item in pictures)
-                        {
-                            db.Pictures.Remove(item);
-                        }
-                        Directory.Delete(root, true);
-                    }
-                    #region Picture
-
-                    List<string> listPath = new List<string>();
                     var provider = new MultipartFormDataStreamProvider(root);
-                    
 
-                    if (!Directory.Exists(root))
+                    if (provider.FormData.Count != 0)
                     {
-                        Directory.CreateDirectory(root);
-                    }
-
-                    await Request.Content.ReadAsMultipartAsync(provider)
-                        .ContinueWith(async (a) =>
+                        if (Directory.Exists(root))
                         {
-                            foreach (var file in provider.FileData)
+                            var pictures = db.Pictures.Where(x => x.PostId == post.Id);
+                            foreach (var item in pictures)
                             {
-                                string name = file.Headers.ContentDisposition.FileName;
-                                name = Guid.NewGuid() + "_" + name.Trim('"');
-                                var localFileName = file.LocalFileName;
-                                var filePath = Path.Combine(root, name);
-                                listPath.Add(post.Id + "/" + name);
-                                File.Move(localFileName, filePath);
+                                db.Pictures.Remove(item);
                             }
-                        }).Unwrap();
+                            Directory.Delete(root, true);
+                        }
+                        #region Picture
 
-                    foreach (var path in listPath)
-                    {
-                        var picture = new Picture()
+                        List<string> listPath = new List<string>();
+
+
+                        if (!Directory.Exists(root))
                         {
-                            Id = Guid.NewGuid(),
-                            Path = path,
-                            Active = true,
-                            PostId = post.Id
-                        };
-                        db.Pictures.Add(picture);
+                            Directory.CreateDirectory(root);
+                        }
+
+                        await Request.Content.ReadAsMultipartAsync(provider)
+                            .ContinueWith(async (a) =>
+                            {
+                                foreach (var file in provider.FileData)
+                                {
+                                    string name = file.Headers.ContentDisposition.FileName;
+                                    name = Guid.NewGuid() + "_" + name.Trim('"');
+                                    var localFileName = file.LocalFileName;
+                                    var filePath = Path.Combine(root, name);
+                                    listPath.Add(post.Id + "/" + name);
+                                    File.Move(localFileName, filePath);
+                                }
+                            }).Unwrap();
+
+                        foreach (var path in listPath)
+                        {
+                            var picture = new Picture()
+                            {
+                                Id = Guid.NewGuid(),
+                                Path = path,
+                                Active = true,
+                                PostId = post.Id
+                            };
+                            db.Pictures.Add(picture);
+                        }
+                        #endregion
                     }
-                    #endregion
+
 
                     db.SaveChanges();
                 }
+                return Json(post);
             }
             catch (Exception e)
             {
@@ -243,7 +252,6 @@ namespace ConfessionAPI.Areas.User.Controllers
                 ModelState.AddModelError("DB", "Error edit post or History is empty or Account error");
                 return BadRequest(ModelState);
             }
-            return Json(post);
         }
 
         [HttpPost]
@@ -254,10 +262,15 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                 Guid postId = Guid.Parse(HttpContext.Current.Request["Id"]);
                 var userId = User.Identity.GetUserId();
-                
+
                 var listPostHistorys = db.PostHistories.Where(x => x.AccountId == userId && x.PostId == postId).ToList();
+                if (listPostHistorys.Count == 0)
+                {
+                    ModelState.AddModelError("Error", "Bạn không thể xóa bài viết này");
+                    return BadRequest(ModelState);
+                }
                 var oldPost = db.Posts.Find(postId);
-                
+
                 // Delete PostLike
                 var postLikes = db.PostLikes.Where(s => s.Id == oldPost.Id).ToList();
                 if (postLikes.Count != 0)
@@ -362,10 +375,8 @@ namespace ConfessionAPI.Areas.User.Controllers
                 }
 
                 totalLike = db.PostLikes.Where(x => x.IsLiked == true
-                                                    && x.UserID == userId
                                                     && x.Id == idPost).Count();
                 totalDislike = db.PostLikes.Where(x => x.IsLiked == false
-                                                       && x.UserID == userId
                                                        && x.Id == idPost).Count();
                 post.Like = totalLike;
                 post.Dislike = totalDislike;
@@ -380,7 +391,6 @@ namespace ConfessionAPI.Areas.User.Controllers
                 return BadRequest(ModelState);
             }
         }
-
 
         [HttpPost]
         public async Task<IHttpActionResult> Dislike()
@@ -426,10 +436,8 @@ namespace ConfessionAPI.Areas.User.Controllers
                 }
 
                 totalLike = db.PostLikes.Where(x => x.IsLiked == true
-                                                    && x.UserID == userId
                                                     && x.Id == idPost).Count();
                 totalDislike = db.PostLikes.Where(x => x.IsLiked == false
-                                                       && x.UserID == userId
                                                        && x.Id == idPost).Count();
                 post.Like = totalLike;
                 post.Dislike = totalDislike;

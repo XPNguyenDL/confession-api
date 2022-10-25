@@ -75,6 +75,11 @@ namespace ConfessionAPI.Models
 
         // Đánh dấu xóa bài viết
         public bool Active { get; set; }
+        [Timestamp] public byte[] RowVersion { get; set; }
+
+        // ======================================================
+        // Navigation properties
+        // ======================================================
 
         [NotMapped]
         public string NickName { get; set; }
@@ -82,8 +87,8 @@ namespace ConfessionAPI.Models
         [NotMapped]
         public string Avatar { get; set; }
 
-        [Timestamp] public byte[] RowVersion { get; set; }
-
+        [NotMapped]
+        public int TotalCmt { get; set; }
 
         // ======================================================
         // Navigation properties

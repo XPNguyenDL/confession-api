@@ -342,7 +342,8 @@ namespace ConfessionAPI.Controllers
                         Description = "",
                         Gender = Gender.Other,
                         Major = model.UserName,
-                        Birthday = DateTime.Now
+                        Birthday = DateTime.Now,
+                        NickName = model.NickName
                     }
                 };
 

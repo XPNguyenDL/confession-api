@@ -20,7 +20,7 @@ namespace ConfessionAPI.Areas.User.Data
         public int? Like { get; set; }
         public int? Dislike { get; set; }
         public int? Report { get; set; }
-        public bool IsPrivate { get; set; }
+        public bool PrivateMode { get; set; }
         //public PostStatus Status { get; set; }
 
         public bool Active { get; set; }

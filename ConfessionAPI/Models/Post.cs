@@ -103,6 +103,7 @@ namespace ConfessionAPI.Models
         public virtual IList<Picture> Pictures { get; set; }
         [DataMember]
         public virtual IList<PostLike> PostLikes { get; set; }
+
     }
 
     public class PostLike

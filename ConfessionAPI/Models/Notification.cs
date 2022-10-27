@@ -8,6 +8,13 @@ using Newtonsoft.Json;
 
 namespace ConfessionAPI.Models
 {
+    public enum TypeNotify
+    {
+        Like, 
+        Comment,
+        Report
+    }
+
     public class Notification
     {
         [Key]
@@ -22,9 +29,13 @@ namespace ConfessionAPI.Models
 
         public string Description { get; set; }
 
+        public Guid PostId { get; set; }
+
         public DateTime NotifyDate { get; set; }
 
         public Boolean IsRead { get; set; }
+
+        public TypeNotify TypeNotify { get; set; }
 
         [StringLength(500)]
         public string Avatar { get; set; }

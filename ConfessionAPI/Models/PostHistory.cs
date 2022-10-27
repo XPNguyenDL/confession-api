@@ -29,12 +29,6 @@ namespace ConfessionAPI.Models
 
         public PostHistoryAction HistoryAction { get; set; }
 
-        [Column(TypeName = "nText")]
-        public string OriginalPost { get; set; }
-
-        [Column(TypeName = "nText")]
-        public string ModifiedPost { get; set; }
-
         // ======================================================
         // Navigation properties
         // ======================================================

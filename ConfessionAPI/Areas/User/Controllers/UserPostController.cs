@@ -19,7 +19,6 @@ namespace ConfessionAPI.Areas.User.Controllers
 {
     public class UserPostController : UserController
     {
-        private ConfessionDbContext db = new ConfessionDbContext();
 
         [HttpPost]
         public IHttpActionResult PostLike()
@@ -67,7 +66,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                         Active = true,
                         Status = PostStatus.Violate,
                         CreatedTime = DateTime.Now,
-                        PrivateMode = createModel.IsPrivate,
+                        PrivateMode = createModel.PrivateMode,
                         Categories = new List<Category>(),
                     };
 
@@ -84,8 +83,6 @@ namespace ConfessionAPI.Areas.User.Controllers
                         ActionTime = DateTime.Now,
                         PostId = post.Id,
                         HistoryAction = PostHistoryAction.Create,
-                        OriginalPost = null,
-                        ModifiedPost = JsonConvert.SerializeObject(post)
                     };
 
                     db.PostHistories.Add(history);
@@ -170,6 +167,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                     }
                     post.Content = createModel.Content;
                     post.Title = createModel.Title;
+                    post.PrivateMode = createModel.PrivateMode;
                     UpdatePostCategories(post, createModel.SelectedCategories);
 
                     db.Entry(post).State = EntityState.Modified;
@@ -192,7 +190,7 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                     var ctx = HttpContext.Current;
                     var root = ctx.Server.MapPath("~/Uploads/Pictures/Post/" + post.Id);
-                    
+
                     if (totalFiles > 0)
                     {
                         if (Directory.Exists(root))
@@ -351,16 +349,40 @@ namespace ConfessionAPI.Areas.User.Controllers
             {
                 var post = new Post();
                 var idPost = Guid.Parse(HttpContext.Current.Request["Id"]);
+
                 post = db.Posts.Find(idPost);
+
                 if (post == null)
                 {
                     ModelState.AddModelError("Post", "Post doesn't exist");
                     return BadRequest(ModelState);
                 }
+
                 var userId = User.Identity.GetUserId();
                 var postLikeCheck = db.PostLikes.SingleOrDefault(x => x.UserID == userId && x.Id == idPost);
                 var postLike = new PostLike();
-                int totalLike, totalDislike;
+
+
+                var userPost = GetUserByPost(post);
+                var userLike = GetUserById(userId);
+                var notify = new Notification();
+
+                if (userPost.Id != userLike.Id)
+                {
+                    notify = new Notification()
+                    {
+                        Id = Guid.NewGuid(),
+                        Avatar = userLike.UserProfile.Avatar,
+                        IsRead = false,
+                        NotifyName = userLike.UserProfile.NickName,
+                        NotifyDate = DateTime.Now,
+                        Description = $" đã thích bài viết của bạn!",
+                        UserID = userPost.Id,
+                        NotifyUserId = userLike.Id,
+                        TypeNotify = TypeNotify.Like,
+                        PostId = post.Id
+                    };
+                }
 
                 if (postLikeCheck == null)
                 {
@@ -370,6 +392,11 @@ namespace ConfessionAPI.Areas.User.Controllers
                     postLike.IsLiked = true;
 
                     db.PostLikes.Add(postLike);
+                    if (notify.UserID != null)
+                    {
+                        db.Notification.Add(notify);
+                    }
+
                     db.SaveChanges();
                 }
                 else
@@ -379,14 +406,26 @@ namespace ConfessionAPI.Areas.User.Controllers
                         postLikeCheck.TimeLike = DateTime.Now;
                         postLikeCheck.IsLiked = true;
                         db.Entry(postLikeCheck).State = EntityState.Modified;
+                        if (notify.UserID != null)
+                        {
+                            db.Notification.Add(notify);
+                        }
                     }
                     else
                     {
+                        var oldNotifies = db.Notification.Where(s => s.PostId == post.Id &&
+                                                                            s.NotifyUserId == userId &&
+                                                                            s.TypeNotify == TypeNotify.Like).ToList();
+                        foreach (var oldNotify in oldNotifies)
+                        {
+                            db.Notification.Remove(oldNotify);
+                        }
                         db.PostLikes.Remove(postLikeCheck);
                     }
                     db.SaveChanges();
                 }
 
+                int totalLike, totalDislike;
                 totalLike = db.PostLikes.Where(x => x.IsLiked == true
                                                     && x.Id == idPost).Count();
                 totalDislike = db.PostLikes.Where(x => x.IsLiked == false
@@ -404,6 +443,38 @@ namespace ConfessionAPI.Areas.User.Controllers
                 return BadRequest(ModelState);
             }
         }
+
+        private Account GetUserByPost(Post post)
+        {
+            var user = new Account();
+
+            var postHistorys = db.PostHistories.Where(x => x.PostId == post.Id).ToList();
+            foreach (var postHistory in postHistorys)
+            {
+                user = db.IdentityUsers.Find(postHistory.AccountId);
+                break;
+            }
+
+            if (user.UserProfile.NickName == null)
+            {
+                user.UserProfile.NickName = "User@" + user.UserProfile.Id.Split('-')[0];
+            }
+
+            return user;
+        }
+
+        private Account GetUserById(string id)
+        {
+            var user = db.IdentityUsers.Find(id);
+
+            if (user.UserProfile.NickName == null)
+            {
+                user.UserProfile.NickName = "User@" + user.UserProfile.Id.Split('-')[0];
+            }
+
+            return user;
+        }
+
 
         [HttpPost]
         public async Task<IHttpActionResult> Dislike()

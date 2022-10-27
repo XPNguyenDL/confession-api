@@ -24,7 +24,7 @@ namespace ConfessionAPI.Controllers
         {
             comment.ChildComments = allCmts
                 .Where(x => x.ParentId == comment.Id)
-                .OrderByDescending(s => s.PostTime)
+                .OrderBy(s => s.PostTime)
                 .ToList();
             foreach (var subCmt in comment.ChildComments)
             {
@@ -49,7 +49,7 @@ namespace ConfessionAPI.Controllers
         private List<Comment> PolulateComment(Guid postId)
         {
             var allCmts = db.Comments.Where(x => x.PostId == postId)
-                .OrderByDescending(s => s.PostTime)
+                .OrderBy(s => s.PostTime)
                 .ToList();
             var groupCmts = allCmts
                 .Where(x => !x.ParentId.HasValue || x.ParentId == null)
@@ -114,7 +114,6 @@ namespace ConfessionAPI.Controllers
             posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
             return posts;
         }
-
 
         [HttpGet]
         public IHttpActionResult Index()
@@ -231,6 +230,61 @@ namespace ConfessionAPI.Controllers
             hotPosts = hotPosts.OrderByDescending(x => x.Like).ToList();
             return Json(hotPosts.Take(10));
         }
-        
+
+        [HttpPost]
+        public IHttpActionResult GetPostById()
+        {
+            try
+            {
+                var post = new Post();
+                var idPost = Guid.Parse(HttpContext.Current.Request["Id"]);
+
+                post = db.Posts.Find(idPost);
+
+                if (post == null)
+                {
+                    ModelState.AddModelError("Post", "Post doesn't exist");
+                    return BadRequest(ModelState);
+                }
+
+                Account account = new Account();
+
+                var postHistorys = db.PostHistories.Where(x => x.PostId == post.Id).ToList();
+                foreach (var postHistory in postHistorys)
+                {
+                    account = db.IdentityUsers.Find(postHistory.AccountId);
+                    break;
+                }
+
+                post.Comments = PolulateComment(post.Id);
+
+                post.TotalCmt = db.Comments.Where(s => s.PostId == post.Id).Count();
+
+                if (account.UserProfile.NickName != null)
+                {
+                    post.NickName = account.UserProfile.NickName;
+                }
+                else
+                {
+                    post.NickName = "User@" + account.UserProfile.Id.Split('-')[0];
+                }
+
+                if (account.UserProfile.Avatar != null || post.PrivateMode)
+                {
+                    post.Avatar = account.UserProfile.Avatar;
+                }
+                else
+                {
+                    post.Avatar = "";
+                }
+                return Json(post);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
     }
 }

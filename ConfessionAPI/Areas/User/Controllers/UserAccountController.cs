@@ -18,8 +18,6 @@ namespace ConfessionAPI.Areas.User.Controllers
 {
     public class UserAccountController : UserController
     {
-        private ConfessionDbContext db = new ConfessionDbContext();
-
         [HttpGet]
         public IHttpActionResult GetInfo()
         {
@@ -38,6 +36,9 @@ namespace ConfessionAPI.Areas.User.Controllers
                 {
                     account.UserProfile.Avatar = "";
                 }
+
+                account.Comments.Clear();
+                account.PostHistory.Clear();
                 account.RoleTemps = temp;
                 return Json(account);
             }

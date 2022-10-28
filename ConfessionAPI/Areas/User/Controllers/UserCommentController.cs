@@ -79,7 +79,7 @@ namespace ConfessionAPI.Areas.User.Controllers
 
             return groupCmts;
         }
-        
+
         [HttpPost]
         public IHttpActionResult Index()
         {
@@ -95,12 +95,24 @@ namespace ConfessionAPI.Areas.User.Controllers
             {
                 var cmtRequest = HttpContext.Current.Request["comment"];
                 var cmt = JsonConvert.DeserializeObject<Comment>(cmtRequest);
+                if (db.Posts.SingleOrDefault(s => s.Id == cmt.PostId) == null)
+                {
+                    ModelState.AddModelError("Error", $"Post doesn't exist");
+                    return BadRequest(ModelState);
+                }
 
+                var userId = User.Identity.GetUserId();
                 cmt.Id = Guid.NewGuid();
-                cmt.AccountId = User.Identity.GetUserId();
+                cmt.AccountId = userId;
                 cmt.PostTime = DateTime.Now;
                 cmt.Active = true;
+                cmt.IsEdited = false;
                 db.Comments.Add(cmt);
+
+                var userPost = GetUserByPost(cmt.PostId);
+                var userCmt = GetUserById(userId);
+                NotifyCmt(cmt, userCmt, userPost);
+
                 db.SaveChanges();
                 return Json(cmt);
             }
@@ -118,14 +130,186 @@ namespace ConfessionAPI.Areas.User.Controllers
             {
                 var cmt = HttpContext.Current.Request["Comment"];
                 Comment newCmt = JsonConvert.DeserializeObject<Comment>(cmt);
+                var oldCmt = db.Comments.FirstOrDefault(s => s.Id == newCmt.Id);
+                if (oldCmt.AccountId != User.Identity.GetUserId())
+                {
+                    ModelState.AddModelError("Error", "Bạn không thể chỉnh sửa bình luận này");
+                    return BadRequest(ModelState);
+                }
+                oldCmt.PostTime = DateTime.Now;
+                oldCmt.Content = newCmt.Content;
+                oldCmt.IsEdited = true;
+                db.Entry(oldCmt).State = EntityState.Modified;
+                db.SaveChanges();
 
-                return Json(newCmt);
+                return Json(oldCmt);
             }
             catch (Exception e)
             {
                 ModelState.AddModelError("Error", e.Message);
                 return BadRequest(ModelState);
             }
+        }
+
+        [HttpPost]
+        public IHttpActionResult Delete()
+        {
+            try
+            {
+                var cmtId = Guid.Parse(HttpContext.Current.Request["Id"]);
+                var cmt = db.Comments.FirstOrDefault(c => c.Id == cmtId);
+                if (cmt == null)
+                {
+                    ModelState.AddModelError("Error", "Bình luận này không tồn tại");
+                    return BadRequest(ModelState);
+                }
+
+                var postId = cmt.PostId;
+                var userPost = GetUserByPost(postId);
+                List<Comment> newCmts;
+                if (userPost.Id == User.Identity.GetUserId())
+                {
+                    DeleteComment(cmt);
+                    db.SaveChanges();
+                    newCmts = PolulateComment(postId);
+                    return Json(newCmts);
+                }
+                if (cmt.AccountId != User.Identity.GetUserId())
+                {
+                    ModelState.AddModelError("Error", "Bạn không thể xóa bình luận này");
+                    return BadRequest(ModelState);
+                }
+                DeleteComment(cmt);
+                db.SaveChanges();
+                newCmts = PolulateComment(postId);
+
+                var post = db.Posts.FirstOrDefault(s => s.Id == postId);
+
+                if (userPost.UserProfile.NickName != null)
+                {
+                    post.NickName = userPost.UserProfile.NickName;
+                }
+                else
+                {
+                    post.NickName = "User@" + userPost.UserProfile.Id.Split('-')[0];
+                }
+
+                if (userPost.UserProfile.Avatar != null || post.PrivateMode)
+                {
+                    post.Avatar = userPost.UserProfile.Avatar;
+                }
+                else
+                {
+                    post.Avatar = "Default/Avatar_default.png";
+                }
+
+                post.Comments = newCmts;
+
+                return Json(post);
+
+
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+            
+        }
+        
+
+        private void DeleteComment(Comment cmt)
+        {
+            var postId = cmt.PostId;
+            
+            
+
+            var listCmtLikes = db.CommentLikes.Where(s => s.Id == cmt.Id).ToList();
+            foreach (var cmtLike in listCmtLikes)
+            {
+                db.CommentLikes.Remove(cmtLike);
+            }
+
+            var childCmts = db.Comments.Where(s => s.ParentId == cmt.Id).ToList();
+            foreach (var child in childCmts)
+            {
+                db.Comments.Remove(child);
+            }
+
+            db.Comments.Remove(cmt);
+        }
+
+        private void NotifyCmt(Comment cmt, Account userCmt, Account userPost)
+        {
+            if (userCmt.Id != userPost.Id)
+            {
+                var notifyPost = new Notification()
+                {
+                    Id = Guid.NewGuid(),
+                    Avatar = userCmt.UserProfile.Avatar,
+                    IsRead = false,
+                    NotifyName = userCmt.UserProfile.NickName,
+                    NotifyDate = DateTime.Now,
+                    Description = $" đã bình luận bài viết của bạn!",
+                    UserID = userPost.Id,
+                    NotifyUserId = userCmt.Id,
+                    TypeNotify = TypeNotify.Comment,
+                    PostId = cmt.PostId
+                };
+                db.Notification.Add(notifyPost);
+            }
+            if (db.Comments.Any(x => x.Id == cmt.ParentId))
+            {
+                var userCmtParent = db.Comments.FirstOrDefault(x => x.Id == cmt.ParentId);
+                if (userCmtParent.AccountId != userCmt.Id)
+                {
+                    var notifyCmt = new Notification()
+                    {
+                        Id = Guid.NewGuid(),
+                        Avatar = userCmt.UserProfile.Avatar,
+                        IsRead = false,
+                        NotifyName = userCmt.UserProfile.NickName,
+                        NotifyDate = DateTime.Now,
+                        Description = $" đã trả lời bình luận của bạn!",
+                        UserID = userCmtParent.AccountId,
+                        NotifyUserId = userCmt.Id,
+                        TypeNotify = TypeNotify.Comment,
+                        PostId = cmt.PostId
+                    };
+                    db.Notification.Add(notifyCmt);
+                }
+            }
+        }
+
+        private Account GetUserByPost(Guid postId)
+        {
+            var user = new Account();
+
+            var postHistorys = db.PostHistories.Where(x => x.PostId == postId).ToList();
+            foreach (var postHistory in postHistorys)
+            {
+                user = db.IdentityUsers.Find(postHistory.AccountId);
+                break;
+            }
+
+            if (user.UserProfile.NickName == null)
+            {
+                user.UserProfile.NickName = "User@" + user.UserProfile.Id.Split('-')[0];
+            }
+
+            return user;
+        }
+
+        private Account GetUserById(string id)
+        {
+            var user = db.IdentityUsers.Find(id);
+
+            if (user.UserProfile.NickName == null)
+            {
+                user.UserProfile.NickName = "User@" + user.UserProfile.Id.Split('-')[0];
+            }
+
+            return user;
         }
     }
 }

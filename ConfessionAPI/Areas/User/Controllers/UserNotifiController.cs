@@ -4,6 +4,7 @@ using System.Data.Entity;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Web;
 using System.Web.Http;
 using Microsoft.AspNet.Identity;
 
@@ -29,6 +30,9 @@ namespace ConfessionAPI.Areas.User.Controllers
                 db.SaveChanges();
 
                 notifies = db.Notification.Where(x => x.UserID == userId).ToList();
+                notifies = notifies.OrderByDescending(s => s.NotifyDate).ToList();
+                
+
                 return Json(notifies);
             }
             catch (Exception e)
@@ -53,6 +57,8 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                 db.SaveChanges();
 
+                notifies = db.Notification.Where(x => x.UserID == userId)
+                    .OrderByDescending(s => s.NotifyDate).ToList();
                 return Json(notifies);
             }
             catch (Exception e)
@@ -76,6 +82,36 @@ namespace ConfessionAPI.Areas.User.Controllers
 
                 db.SaveChanges();
 
+                return Json(notifies);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
+        [HttpPost]
+        public IHttpActionResult ReadNotify()
+        {
+            try
+            {
+                var idNotify = Guid.Parse(HttpContext.Current.Request["id"]);
+                var userId = User.Identity.GetUserId();
+                var notify = db.Notification.FirstOrDefault(s => s.Id == idNotify
+                                                                    && s.UserID == userId);
+                if (notify == null)
+                {
+                    ModelState.AddModelError("Error", "Thông báo không tồn tại");
+                    return BadRequest(ModelState);
+                }
+
+                notify.IsRead = true;
+                db.Entry(notify).State = EntityState.Modified;
+                db.SaveChanges();
+
+                var notifies = db.Notification.Where(x => x.UserID == userId)
+                    .OrderByDescending(s => s.NotifyDate).ToList();
                 return Json(notifies);
             }
             catch (Exception e)

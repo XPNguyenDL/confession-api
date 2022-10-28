@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
@@ -322,16 +323,21 @@ namespace ConfessionAPI.Controllers
             {
                 if (db.IdentityUsers.SingleOrDefault(x => x.UserName == model.UserName) != null)
                 {
-                    ModelState.AddModelError("Error", $"Tên '{model.NickName}' đã tồn tại.");
+                    ModelState.AddModelError("Error", $"Tên đăng nhập đã được sử dụng.");
                     return BadRequest(ModelState);
                 }
                 if (db.IdentityUsers.SingleOrDefault(x => x.Email == model.Email) != null)
                 {
-                    ModelState.AddModelError("Error", $"Email '{model.Email}' đã tồn tại.");
+                    ModelState.AddModelError("Error", $"Email đã được sử dụng.");
                     return BadRequest(ModelState);
                 }
-                if (!ModelState.IsValid)
+
+                Regex regex = new Regex(@"^(?=.*\d)(?=.*[a-z])(?=.*[a-zA-Z]).{6,}$");
+                Match match = regex.Match(model.Password);
+                
+                if (!match.Success)
                 {
+                    ModelState.AddModelError("Error", $"Mật khẩu phải có ít nhất 01 chữ cái thường, 01 chữ số và tối thiểu 06 ký tự");
                     return BadRequest(ModelState);
                 }
 

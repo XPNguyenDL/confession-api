@@ -253,6 +253,10 @@
     <Compile Include="Migrations\202210260841247_AddNotifyAndFixHistoryPost.designer.cs">
       <DependentUpon>202210260841247_AddNotifyAndFixHistoryPost.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202210280806488_AddIsEditedCmt.cs" />
+    <Compile Include="Migrations\202210280806488_AddIsEditedCmt.designer.cs">
+      <DependentUpon>202210280806488_AddIsEditedCmt.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -383,6 +387,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202210260841247_AddNotifyAndFixHistoryPost.resx">
       <DependentUpon>202210260841247_AddNotifyAndFixHistoryPost.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202210280806488_AddIsEditedCmt.resx">
+      <DependentUpon>202210280806488_AddIsEditedCmt.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

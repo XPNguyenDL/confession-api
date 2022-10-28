@@ -28,6 +28,8 @@ namespace ConfessionAPI.Models
 
         public bool Active { get; set; }
 
+        public bool IsEdited { get; set; }
+
         public int? LevelComment { get; set; }
 
         [ForeignKey("ChildComments")]

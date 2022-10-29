@@ -81,7 +81,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                 }
 
                 db.SaveChanges();
-
+                notifies = db.Notification.Where(x => x.UserID == userId).ToList();
                 return Json(notifies);
             }
             catch (Exception e)

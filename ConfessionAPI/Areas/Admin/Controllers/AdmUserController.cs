@@ -19,12 +19,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
 {
     public class AdmUserController : AdmController
     {
-        public AdmUserController()
-        {
-
-        }
-
-        private ConfessionDbContext db = new ConfessionDbContext();
+        
         private ApplicationUserManager _userManager;
         public ApplicationUserManager UserManager
         {
@@ -98,8 +93,6 @@ namespace ConfessionAPI.Areas.Admin.Controllers
 
                         }).Unwrap();
                     
-
-
                     if (userUpdate.RoleTemps != null)
                     {
                         var oldRole = db.UserInRoles.Where(s => s.UserId == userUpdate.Id).ToList();

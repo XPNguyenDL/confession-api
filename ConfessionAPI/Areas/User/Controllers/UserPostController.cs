@@ -19,7 +19,6 @@ namespace ConfessionAPI.Areas.User.Controllers
 {
     public class UserPostController : UserController
     {
-
         [HttpPost]
         public IHttpActionResult PostLike()
         {
@@ -475,7 +474,6 @@ namespace ConfessionAPI.Areas.User.Controllers
             return user;
         }
 
-
         [HttpPost]
         public async Task<IHttpActionResult> Dislike()
         {
@@ -534,6 +532,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                 return BadRequest(ModelState);
             }
         }
+
         [HttpPost]
         public async Task<IHttpActionResult> Upload(Guid id)
         {

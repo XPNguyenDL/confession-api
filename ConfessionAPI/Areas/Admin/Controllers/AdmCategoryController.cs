@@ -10,9 +10,8 @@ using ConfessionAPI.Models;
 
 namespace ConfessionAPI.Areas.Admin.Controllers
 {
-    public class AdmCategoryController : ApiController
+    public class AdmCategoryController : AdmController
     {
-        private ConfessionDbContext db = new ConfessionDbContext();
 
         [HttpGet]
         public IHttpActionResult Index()

@@ -12,9 +12,8 @@ using Microsoft.AspNet.Identity;
 
 namespace ConfessionAPI.Areas.Admin.Controllers
 {
-    public class AdmPostController : ApiController
+    public class AdmPostController : AdmController
     {
-        private ConfessionDbContext db = new ConfessionDbContext();
 
         [HttpGet]
         public IHttpActionResult Index()

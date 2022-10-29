@@ -25,8 +25,5 @@ namespace ConfessionAPI.Controllers
             var result = db.Categories.ToList();
             return Json(result);
         }
-        
-
-        
     }
 }

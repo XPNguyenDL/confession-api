@@ -107,6 +107,8 @@ namespace ConfessionAPI.Areas.User.Controllers
                 cmt.PostTime = DateTime.Now;
                 cmt.Active = true;
                 cmt.IsEdited = false;
+                
+
                 db.Comments.Add(cmt);
 
                 var userPost = GetUserByPost(cmt.PostId);
@@ -167,23 +169,49 @@ namespace ConfessionAPI.Areas.User.Controllers
                 var postId = cmt.PostId;
                 var userPost = GetUserByPost(postId);
                 List<Comment> newCmts;
+                Post post;
+                List<Guid> listIdCmt;
+
                 if (userPost.Id == User.Identity.GetUserId())
                 {
-                    DeleteComment(cmt);
+                    listIdCmt = DeleteParentComment(postId, cmtId);
+                    DeleteComment(listIdCmt);
                     db.SaveChanges();
                     newCmts = PolulateComment(postId);
-                    return Json(newCmts);
+                    post = db.Posts.FirstOrDefault(s => s.Id == postId);
+
+                    if (userPost.UserProfile.NickName != null)
+                    {
+                        post.NickName = userPost.UserProfile.NickName;
+                    }
+                    else
+                    {
+                        post.NickName = "User@" + userPost.UserProfile.Id.Split('-')[0];
+                    }
+
+                    if (userPost.UserProfile.Avatar != null || post.PrivateMode)
+                    {
+                        post.Avatar = userPost.UserProfile.Avatar;
+                    }
+                    else
+                    {
+                        post.Avatar = "Default/Avatar_default.png";
+                    }
+
+                    post.Comments = newCmts;
+                    return Json(post);
                 }
                 if (cmt.AccountId != User.Identity.GetUserId())
                 {
                     ModelState.AddModelError("Error", "Bạn không thể xóa bình luận này");
                     return BadRequest(ModelState);
                 }
-                DeleteComment(cmt);
+                listIdCmt = DeleteParentComment(postId, cmtId);
+                DeleteComment(listIdCmt);
                 db.SaveChanges();
                 newCmts = PolulateComment(postId);
 
-                var post = db.Posts.FirstOrDefault(s => s.Id == postId);
+                post = db.Posts.FirstOrDefault(s => s.Id == postId);
 
                 if (userPost.UserProfile.NickName != null)
                 {
@@ -206,8 +234,6 @@ namespace ConfessionAPI.Areas.User.Controllers
                 post.Comments = newCmts;
 
                 return Json(post);
-
-
             }
             catch (Exception e)
             {
@@ -216,27 +242,59 @@ namespace ConfessionAPI.Areas.User.Controllers
             }
             
         }
-        
 
-        private void DeleteComment(Comment cmt)
+        private void ChildComment(Comment comment, List<Comment> allCmts, List<Guid> listId)
         {
-            var postId = cmt.PostId;
-            
-            
-
-            var listCmtLikes = db.CommentLikes.Where(s => s.Id == cmt.Id).ToList();
-            foreach (var cmtLike in listCmtLikes)
+            comment.ChildComments = allCmts
+                .Where(x => x.ParentId == comment.Id)
+                .ToList();
+            var list = new List<Guid>();
+            foreach (var subCmt in comment.ChildComments)
             {
-                db.CommentLikes.Remove(cmtLike);
+                listId.Add(subCmt.Id);
+                ChildComment(subCmt, allCmts, listId);
+            }
+        }
+
+        private List<Guid> DeleteParentComment(Guid postId, Guid idCmt)
+        {
+            var allCmts = db.Comments.Where(x => x.PostId == postId).ToList();
+
+            var groupCmts = allCmts
+                .Where(x => x.Id == idCmt)
+                .ToList();
+            var listIdCmt = new List<Guid>();
+            foreach (var cmt in groupCmts)
+            {
+                listIdCmt.Add(cmt.Id);
+                ChildComment(cmt, allCmts, listIdCmt);
+                
             }
 
-            var childCmts = db.Comments.Where(s => s.ParentId == cmt.Id).ToList();
-            foreach (var child in childCmts)
+            var resultList = new List<Guid>();
+            for (int i = listIdCmt.Count - 1; i >= 0; i--)
             {
-                db.Comments.Remove(child);
+                resultList.Add(listIdCmt[i]);
             }
 
-            db.Comments.Remove(cmt);
+            return resultList;
+        }
+
+
+        private void DeleteComment(List<Guid> listIdCmt)
+        {
+            foreach (var idCmt in listIdCmt)
+            {
+                var cmt = db.Comments.Find(idCmt);
+                var listCmtLikes = db.CommentLikes.Where(s => s.Id == idCmt).ToList();
+                foreach (var cmtLike in listCmtLikes)
+                {
+                    db.CommentLikes.Remove(cmtLike);
+                }
+
+                db.Comments.Remove(cmt);
+            }
+            
         }
 
         private void NotifyCmt(Comment cmt, Account userCmt, Account userPost)

@@ -40,6 +40,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                 account.Comments.Clear();
                 account.PostHistory.Clear();
                 account.RoleTemps = temp;
+                account.Notifications.OrderByDescending(s => s.NotifyDate);
                 return Json(account);
             }
             catch (Exception e)
@@ -56,6 +57,7 @@ namespace ConfessionAPI.Areas.User.Controllers
             {
                 var data = HttpContext.Current.Request["Account"];
                 Account userUpdate = JsonConvert.DeserializeObject<Account>(data);
+                var totalFiles = HttpContext.Current.Request.Files.Count;
 
                 var userId = User.Identity.GetUserId();
                 var user = db.IdentityUsers.Find(userId);
@@ -64,36 +66,42 @@ namespace ConfessionAPI.Areas.User.Controllers
                 user.Email = userUpdate.Email;
                 user.PhoneNumber = userUpdate.PhoneNumber;
 
-                var ctx = HttpContext.Current;
-                var root = ctx.Server.MapPath("~/Uploads/Pictures/User/" + userId);
-                if (Directory.Exists(root))
+                if (totalFiles == 1)
                 {
-                    Directory.Delete(root, true);
-                }
-
-                var provider = new MultipartFormDataStreamProvider(root);
-                
-                if (!Directory.Exists(root))
-                {
-                    Directory.CreateDirectory(root);
-                }
-
-                await Request.Content.ReadAsMultipartAsync(provider)
-                    .ContinueWith(async (a) =>
+                    var ctx = HttpContext.Current;
+                    var root = ctx.Server.MapPath("~/Uploads/Pictures/User/" + userId);
+                    if (Directory.Exists(root))
                     {
-                        var file = provider.FileData.FirstOrDefault();
-                        string name = file.Headers.ContentDisposition.FileName;
-                        name = Guid.NewGuid() + "_" + name.Trim('"');
-                        var localFileName = file.LocalFileName;
-                        var filePath = Path.Combine(root, name);
-                        user.UserProfile.Avatar = userId + "/" + name;
-                        File.Move(localFileName, filePath);
+                        Directory.Delete(root, true);
+                        ProcessDirectory(ctx.Server.MapPath("~/Uploads/Pictures/User/"));
+                    }
 
-                    }).Unwrap();
+                    var provider = new MultipartFormDataStreamProvider(root);
+
+                    if (!Directory.Exists(root))
+                    {
+                        Directory.CreateDirectory(root);
+                    }
+
+                    await Request.Content.ReadAsMultipartAsync(provider)
+                        .ContinueWith(async (a) =>
+                        {
+                            var file = provider.FileData.FirstOrDefault();
+                            string name = file.Headers.ContentDisposition.FileName;
+                            name = Guid.NewGuid() + "_" + name.Trim('"');
+                            var localFileName = file.LocalFileName;
+                            var filePath = Path.Combine(root, name);
+                            user.UserProfile.Avatar = userId + "/" + name;
+                            File.Move(localFileName, filePath);
+
+                        }).Unwrap();
+                }
 
                 db.Entry(user).State = EntityState.Modified;
                 db.SaveChanges();
-
+                user.Comments.Clear();
+                user.PostHistory.Clear();
+                user.Notifications.OrderByDescending(s => s.NotifyDate);
                 return Json(user);
             }
             catch (Exception e)
@@ -101,7 +109,19 @@ namespace ConfessionAPI.Areas.User.Controllers
                 ModelState.AddModelError("Error", e.Message);
                 return BadRequest(ModelState);
             }
+        }
 
+        private void ProcessDirectory(string startLocation)
+        {
+            foreach (var directory in Directory.GetDirectories(startLocation))
+            {
+                ProcessDirectory(directory);
+                if (Directory.GetFiles(directory).Length == 0 &&
+                    Directory.GetDirectories(directory).Length == 0)
+                {
+                    Directory.Delete(directory, false);
+                }
+            }
         }
     }
 }

@@ -217,6 +217,7 @@
     <Compile Include="Areas\User\Controllers\UserController.cs" />
     <Compile Include="Areas\User\Controllers\UserPostController.cs" />
     <Compile Include="Areas\User\Data\PostCreateViewModel.cs" />
+    <Compile Include="Areas\User\Data\ReportViewModel.cs" />
     <Compile Include="Areas\User\UserAreaRegistration.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\CategoryController.cs" />

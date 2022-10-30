@@ -107,7 +107,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                 cmt.PostTime = DateTime.Now;
                 cmt.Active = true;
                 cmt.IsEdited = false;
-                
+                cmt.Content = cmt.Content.TrimEnd('\r', '\n');
 
                 db.Comments.Add(cmt);
 

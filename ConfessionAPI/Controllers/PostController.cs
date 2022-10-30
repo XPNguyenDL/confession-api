@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Hosting;
@@ -108,8 +110,9 @@ namespace ConfessionAPI.Controllers
                 }
                 else
                 {
-                    post.Avatar = "";
+                    post.Avatar = "Default/Avatar_default.png";
                 }
+                post.PostLikes.Clear();
             }
             posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
             return posts;
@@ -125,9 +128,33 @@ namespace ConfessionAPI.Controllers
 
                 return Json(posts);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                return Json(ex);
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
+        [HttpPost]
+        public IHttpActionResult PostByUser()
+        {
+            try
+            {
+                string userId = HttpContext.Current.Request["Id"];
+                var user = db.IdentityUsers.FirstOrDefault(s => s.Id == userId);
+                if (user == null)
+                {
+                    ModelState.AddModelError("Error", "Tài khoản không tồn tại");
+                    return BadRequest(ModelState);
+                }
+                var posts = db.Posts.Where(s => s.PostHistories.Any(h => h.AccountId == userId)).ToList();
+                return Json(FilterPosts(posts));
+
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
             }
         }
 
@@ -138,6 +165,8 @@ namespace ConfessionAPI.Controllers
             {
                 string keyword = HttpContext.Current.Request["keyword"];
                 var listKey = keyword.Split(' ');
+                return Json(keyword);
+                
                 var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
                 foreach (var key in listKey)
                 {
@@ -166,6 +195,7 @@ namespace ConfessionAPI.Controllers
                 return BadRequest(ModelState);
             }
         }
+        
 
         [HttpPost]
         public IHttpActionResult FindPostCategory()

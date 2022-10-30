@@ -313,6 +313,42 @@ namespace ConfessionAPI.Controllers
             return logins;
         }
 
+        // Post api/Account/GetUserInfo
+        [HttpPost]
+        public IHttpActionResult GetUserInfo()
+        {
+            try
+            {
+                var userId = HttpContext.Current.Request["Id"];
+                var userInfo = db.IdentityUsers.FirstOrDefault(s => s.Id == userId);
+                if (userInfo == null)
+                {
+                    ModelState.AddModelError("Error", "Tài khoản không tồn tại");
+                    return BadRequest(ModelState);
+                }
+
+                var user = new Account()
+                {
+                    Id = userInfo.Id,
+                    Email = userInfo.Email,
+                    PhoneNumber = userInfo.PhoneNumber,
+                    UserProfile = userInfo.UserProfile
+                };
+
+                if (user.UserProfile.Avatar == null)
+                {
+                    user.UserProfile.Avatar = "Default/Avatar_default.png";
+                }
+
+                return Json(user);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
         // POST api/Account/Register
         [AllowAnonymous]
         [Route("Register")]

@@ -315,6 +315,7 @@ namespace ConfessionAPI.Controllers
 
         // Post api/Account/GetUserInfo
         [HttpPost]
+        [AllowAnonymous]
         public IHttpActionResult GetUserInfo()
         {
             try

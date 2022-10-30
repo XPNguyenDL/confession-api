@@ -112,7 +112,6 @@ namespace ConfessionAPI.Controllers
                 {
                     post.Avatar = "Default/Avatar_default.png";
                 }
-                post.PostLikes.Clear();
             }
             posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
             return posts;

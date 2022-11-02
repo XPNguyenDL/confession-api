@@ -211,7 +211,7 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\SampleDirection.cs" />
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
-    <Compile Include="Areas\User\Controllers\UserNotifiController.cs" />
+    <Compile Include="Areas\User\Controllers\UserNotifyController.cs" />
     <Compile Include="Areas\User\Controllers\UserAccountController.cs" />
     <Compile Include="Areas\User\Controllers\UserCommentController.cs" />
     <Compile Include="Areas\User\Controllers\UserController.cs" />

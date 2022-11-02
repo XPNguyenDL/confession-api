@@ -387,10 +387,8 @@ namespace ConfessionAPI.Controllers
                     {
                         FirstName = model.UserName,
                         LastName = model.UserName,
-                        Description = "",
-                        Gender = Gender.Other,
-                        Major = model.UserName,
                         Birthday = DateTime.Now,
+                        Gender = Gender.Other,
                         NickName = model.NickName,
                         Avatar = "Default/Avatar_default.png"
                     }

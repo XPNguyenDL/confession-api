@@ -11,7 +11,7 @@ using Microsoft.AspNet.Identity;
 
 namespace ConfessionAPI.Areas.User.Controllers
 {
-    public class UserNotifiController : UserController
+    public class UserNotifyController : UserController
     {
         private List<Notification> Notifies()
         {

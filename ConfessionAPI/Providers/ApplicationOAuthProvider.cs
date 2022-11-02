@@ -125,6 +125,11 @@ namespace ConfessionAPI.Providers
                 { "phoneNumber", user.PhoneNumber ?? ""},
                 { "userProfile.nickName", user.UserProfile?.NickName ?? ""},
                 { "userProfile.avatar", user.UserProfile?.Avatar ?? ""},
+                { "userProfile.major", user.UserProfile?.Major ?? ""},
+                { "userProfile.firstName", user.UserProfile?.FirstName ?? ""},
+                { "userProfile.lastName", user.UserProfile?.LastName ?? ""},
+                { "userProfile.fullName", user.UserProfile?.FullName ?? ""},
+                { "userProfile.description", user.UserProfile?.Description ?? ""},
                 { "lockoutEndDateUtc", user.LockoutEndDateUtc.ToString() ?? ""}
             };
             return new AuthenticationProperties(data);

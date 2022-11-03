@@ -163,18 +163,9 @@ namespace ConfessionAPI.Controllers
             try
             {
                 string keyword = HttpContext.Current.Request["keyword"];
+                keyword = keyword.Replace("\n", "").Replace("\r", "");
+                keyword = RemoveSignVietnameseString(keyword).ToLower();
                 var listKey = keyword.Split(' ');
-                Regex ConvertToUnsign_rg = null;
-
-                if (ReferenceEquals(ConvertToUnsign_rg, null))
-                {
-                    ConvertToUnsign_rg = new Regex("p{IsCombiningDiacriticalMarks}+");
-                }
-
-                var temp = keyword.Normalize(NormalizationForm.FormD);
-                var a = ConvertToUnsign_rg.Replace(temp, string.Empty).Replace("đ", "d").Replace("Đ", "D").ToLower();
-
-                return Json(a);
                 
                 var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
                 foreach (var key in listKey)
@@ -184,8 +175,9 @@ namespace ConfessionAPI.Controllers
                         if (!string.IsNullOrWhiteSpace(key))
                         {
                             posts = posts.Where(x =>
-                                x.Title.ToLower().Contains(key) ||
-                                x.Content.ToLower().Contains(key)).ToList();
+                                RemoveSignVietnameseString(x.Title.ToLower()).Contains(key) ||
+                                RemoveSignVietnameseString(x.Content.ToLower()).Contains(key) ||
+                                x.Categories.Any(c => RemoveSignVietnameseString(c.Name).ToLower().Contains(key))).ToList();
                         }
                     }
                     else
@@ -325,5 +317,48 @@ namespace ConfessionAPI.Controllers
             }
         }
 
+
+        private readonly string[] VietnameseSigns = new string[]
+        {
+
+            "aAeEoOuUiIdDyY",
+
+            "áàạảãâấầậẩẫăắằặẳẵ",
+
+            "ÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴ",
+
+            "éèẹẻẽêếềệểễ",
+
+            "ÉÈẸẺẼÊẾỀỆỂỄ",
+
+            "óòọỏõôốồộổỗơớờợởỡ",
+
+            "ÓÒỌỎÕÔỐỒỘỔỖƠỚỜỢỞỠ",
+
+            "úùụủũưứừựửữ",
+
+            "ÚÙỤỦŨƯỨỪỰỬỮ",
+
+            "íìịỉĩ",
+
+            "ÍÌỊỈĨ",
+
+            "đ",
+
+            "Đ",
+
+            "ýỳỵỷỹ",
+
+            "ÝỲỴỶỸ"
+        };
+        private string RemoveSignVietnameseString(string str)
+        {
+            for (int i = 1; i < VietnameseSigns.Length; i++)
+            {
+                for (int j = 0; j < VietnameseSigns[i].Length; j++)
+                    str = str.Replace(VietnameseSigns[i][j], VietnameseSigns[0][i - 1]);
+            }
+            return str;
+        }
     }
 }

@@ -60,11 +60,14 @@ namespace ConfessionAPI.Areas.User.Controllers
                 var totalFiles = HttpContext.Current.Request.Files.Count;
 
                 var userId = User.Identity.GetUserId();
+                
+
                 var user = db.IdentityUsers.Find(userId);
                 userUpdate.UserProfile.Id = user.UserProfile.Id;
-                user.UserProfile = userUpdate.UserProfile;
-                user.Email = userUpdate.Email;
-                user.PhoneNumber = userUpdate.PhoneNumber;
+
+                // set tạm
+                user.UserProfile.Description = userUpdate.UserProfile.Description;
+                user.UserProfile.NickName = userUpdate.UserProfile.NickName;
 
                 if (totalFiles == 1)
                 {

@@ -118,11 +118,22 @@ namespace ConfessionAPI.Controllers
                 return BadRequest(ModelState);
             }
 
+            Regex regex = new Regex(@"^(?=.*\d)(?=.*[a-z])(?=.*[a-zA-Z]).{6,}$");
+            Match match = regex.Match(model.NewPassword);
+
+            if (!match.Success)
+            {
+                ModelState.AddModelError("Error", $"Mật khẩu phải có ít nhất 01 chữ cái thường, 01 chữ số và tối thiểu 06 ký tự");
+                return BadRequest(ModelState);
+            }
+
             IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword,
                 model.NewPassword);
             
+            
             if (!result.Succeeded)
             {
+                ModelState.AddModelError("Error", "Mật Khẩu không đúng");
                 return GetErrorResult(result);
             }
 

@@ -37,7 +37,7 @@ namespace ConfessionAPI.Providers
 
             if (user == null)
             {
-                if (context.UserName == "Admin" && context.Password == "Admin#123")
+                if (context.UserName == "Admin" && context.Password == "Admin2022")
                 {
                     var adminUser = new Account()
                     {

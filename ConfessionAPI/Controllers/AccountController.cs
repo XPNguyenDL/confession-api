@@ -71,6 +71,7 @@ namespace ConfessionAPI.Controllers
         // email noreply.email.dluconfession@gmail.com
 
         [HttpPost]
+        [AllowAnonymous]
         public IHttpActionResult SendEmailOTP()
         {
             try
@@ -152,6 +153,7 @@ namespace ConfessionAPI.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         public IHttpActionResult ForgotPassword()
         {
             try

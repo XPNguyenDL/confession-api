@@ -113,6 +113,8 @@ namespace ConfessionAPI.Controllers
                     post.Avatar = "Default/Avatar_default.png";
                 }
             }
+
+            posts = posts.Where(s => s.Active).ToList();
             posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
             return posts;
         }

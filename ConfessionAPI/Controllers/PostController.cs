@@ -157,7 +157,7 @@ namespace ConfessionAPI.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpPost]
         public IHttpActionResult FindPost()
         {
             try
@@ -166,7 +166,7 @@ namespace ConfessionAPI.Controllers
                 keyword = keyword.Replace("\n", "").Replace("\r", "");
                 keyword = RemoveSignVietnameseString(keyword).ToLower();
                 var listKey = keyword.Split(' ');
-                
+
                 var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
                 foreach (var key in listKey)
                 {
@@ -196,7 +196,7 @@ namespace ConfessionAPI.Controllers
                 return BadRequest(ModelState);
             }
         }
-        
+
 
         [HttpPost]
         public IHttpActionResult FindPostCategory()

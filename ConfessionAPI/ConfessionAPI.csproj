@@ -46,7 +46,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Google.Authenticator, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\GoogleAuthenticator.3.0.0\lib\net462\Google.Authenticator.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="QRCoder, Version=1.4.3.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
+      <HintPath>..\packages\QRCoder.1.4.3\lib\net40\QRCoder.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -117,6 +125,7 @@
       <Private>True</Private>
       <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="EntityFramework">
@@ -258,6 +267,10 @@
     <Compile Include="Migrations\202210280806488_AddIsEditedCmt.designer.cs">
       <DependentUpon>202210280806488_AddIsEditedCmt.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202211050851444_AddOtpAccount.cs" />
+    <Compile Include="Migrations\202211050851444_AddOtpAccount.designer.cs">
+      <DependentUpon>202211050851444_AddOtpAccount.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -391,6 +404,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202210280806488_AddIsEditedCmt.resx">
       <DependentUpon>202210280806488_AddIsEditedCmt.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202211050851444_AddOtpAccount.resx">
+      <DependentUpon>202211050851444_AddOtpAccount.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

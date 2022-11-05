@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
 using System.Security.Claims;
@@ -35,5 +37,13 @@ namespace ConfessionAPI.Models
 
         [NotMapped]
         public List<string> RoleTemps { get; set; }
+
+
+        public string Otp { get; set; }
+
+        public DateTime? OtpCreateDate { get; set; }
+
+        public int? OtpWrongTime { get; set; }
     }
+    
 }

@@ -30,6 +30,15 @@ namespace ConfessionAPI.Models
         public string ConfirmPassword { get; set; }
     }
 
+    public class ForgotPassword
+    {
+        public string Email { get; set; }
+
+        public string Otp { get; set; }
+
+        public string NewPassword { get; set; }
+    }
+
     public class RegisterBindingModel
     {
         [Required]

@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
@@ -20,6 +24,8 @@ using Microsoft.Owin.Security.OAuth;
 using ConfessionAPI.Models;
 using ConfessionAPI.Providers;
 using ConfessionAPI.Results;
+using Google.Authenticator;
+using Microsoft.Ajax.Utilities;
 using Newtonsoft.Json;
 
 namespace ConfessionAPI.Controllers
@@ -45,20 +51,187 @@ namespace ConfessionAPI.Controllers
 
         public ApplicationUserManager UserManager
         {
-            get
-            {
-                return _userManager ?? Request.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            }
-            private set
-            {
-                _userManager = value;
-            }
+            get { return _userManager ?? Request.GetOwinContext().GetUserManager<ApplicationUserManager>(); }
+            private set { _userManager = value; }
         }
 
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
+        Random random = new Random();
 
+
+        public string RandomString(int length)
+        {
+            const string chars = "0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
         // GET api/Account/UserInfo
         //[HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
+        // dlu@2022! pass email hzwappxqikdylebx
+        // email noreply.email.dluconfession@gmail.com
+
+        [HttpPost]
+        public IHttpActionResult SendEmailOTP()
+        {
+            try
+            {
+                var otp = RandomString(6);
+                var email = HttpContext.Current.Request["email"];
+                Regex regex = new Regex(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$");
+                Match match = regex.Match(email);
+                if (match.Success)
+                {
+                    using (var context = new ConfessionDbContext())
+                    {
+                        var user = context.IdentityUsers.FirstOrDefault(s => s.Email == email);
+                        if (user != null)
+                        {
+                            user.Otp = otp;
+                            user.OtpCreateDate = DateTime.Now;
+                            user.OtpWrongTime = 0;
+                            context.Entry(user).State = EntityState.Modified;
+                            context.SaveChanges();
+                            using (MailMessage mail = new MailMessage())
+                            {
+                                mail.From = new MailAddress("noreply.email.dluconfession@gmail.com");
+                                mail.To.Add(email);
+                                mail.Subject = $"{otp} là mã xác nhận tài khoản DLU-Confession của bạn";
+                                mail.Body = "<p><span style=\"color:rgb(0,0,0);font-size:15px\">" +
+                                            "Chào bạn<br>" +
+                                            "</span></p>" +
+                                            "<p><span style=\"color:rgb(0,0,0);font-size:15px\">" +
+                                            "Bạn đang Hoàn thành xác nhận đổi mật khẩu, Mã xác nhận là&nbsp;" +
+                                            "</span><span style=\"color:rgb(0,0,0)\"><strong><span style=\"color:rgb(78,164,220);font-size:15px\">" +
+                                            $"{otp}" +
+                                            "</span></strong><span style=\"font-size:15px\">.</span></span> </p>" +
+                                            "<p><span style=\"color:rgb(0,0,0);font-size:15px\">" +
+                                            "Vui lòng hoàn thành xác nhận trong vòng 10 phút." +
+                                            "<br></span></p>";
+                                mail.IsBodyHtml = true;
+
+                                using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587))
+                                {
+                                    smtp.Credentials = new NetworkCredential("noreply.email.dluconfession@gmail.com",
+                                        "tfdvpxulcftdytvx");
+                                    smtp.EnableSsl = true;
+                                    smtp.Send(mail);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ModelState.AddModelError("Error", "Email không tồn tại.");
+                            return BadRequest(ModelState);
+                        }
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("Error", "Vui lòng nhập đúng định dạng Email.");
+                    return BadRequest(ModelState);
+                }
+
+                return Ok();
+            }
+
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("Error", ex.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
+        public bool CheckOtp(Account account)
+        {
+            var timeOut = DateTime.Now.AddMinutes(-10);
+            if (account.OtpCreateDate >= timeOut)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        [HttpPost]
+        public IHttpActionResult ForgotPassword()
+        {
+            try
+            {
+                var data = HttpContext.Current.Request["ForgotPassword"];
+                var changePassword = JsonConvert.DeserializeObject<ForgotPassword>(data);
+
+                Regex regexPass = new Regex(@"^(?=.*\d)(?=.*[a-z])(?=.*[a-zA-Z]).{6,}$");
+                Match matchPass = regexPass.Match(changePassword.NewPassword);
+
+                if (!matchPass.Success)
+                {
+                    ModelState.AddModelError("Error", $"Mật khẩu phải có ít nhất 01 chữ cái thường, 01 chữ số và tối thiểu 06 ký tự");
+                    return BadRequest(ModelState);
+                }
+
+                Regex regexEmail = new Regex(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$");
+                Match matchEmail = regexEmail.Match(changePassword.Email);
+
+                if (matchEmail.Success)
+                {
+                    using (var db = new ConfessionDbContext())
+                    {
+                        var account = db.IdentityUsers.FirstOrDefault(x => x.Email == changePassword.Email);
+                        if (account != null)
+                        {
+                            if (account.OtpWrongTime >= 3)
+                            {
+                                ModelState.AddModelError("Error", "Bạn đã nhập sai quá 3 lần. Vui lòng nhập lại mã xác nhận mới.");
+                                return BadRequest(ModelState);
+                            }
+
+                            if (!CheckOtp(account))
+                            {
+                                ModelState.AddModelError("Error", "Mã xác nhận đã quá hạn sử dụng.");
+                                return BadRequest(ModelState);
+                            }
+                            else
+                            {
+                                if (changePassword.Otp == account.Otp)
+                                {
+                                    var newPassword = UserManager.PasswordHasher.HashPassword(changePassword.NewPassword);
+                                    account.PasswordHash = newPassword;
+                                    account.Otp = null;
+                                    account.OtpWrongTime = 0;
+                                    account.OtpCreateDate = null;
+                                    db.Entry(account).State = EntityState.Modified;
+                                    db.SaveChanges();
+                                }
+                                else
+                                {
+                                    account.OtpWrongTime++;
+                                    db.Entry(account).State = EntityState.Modified;
+                                    db.SaveChanges();
+
+                                    ModelState.AddModelError("Error", "Mã xác nhận không đúng.");
+                                    return BadRequest(ModelState);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ModelState.AddModelError("Error", "Email không tồn tại.");
+                            return BadRequest(ModelState);
+                        }
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("Error", "Email không đúng định dạng.");
+                    return BadRequest(ModelState);
+                }
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
         
 
         // POST api/Account/Logout
@@ -129,8 +302,8 @@ namespace ConfessionAPI.Controllers
 
             IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword,
                 model.NewPassword);
-            
-            
+
+
             if (!result.Succeeded)
             {
                 ModelState.AddModelError("Error", "Mật Khẩu không đúng");
@@ -264,9 +437,9 @@ namespace ConfessionAPI.Controllers
             if (hasRegistered)
             {
                 Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-                
-                 ClaimsIdentity oAuthIdentity = await user.GenerateUserIdentityAsync(UserManager,
-                    OAuthDefaults.AuthenticationType);
+
+                ClaimsIdentity oAuthIdentity = await user.GenerateUserIdentityAsync(UserManager,
+                   OAuthDefaults.AuthenticationType);
                 ClaimsIdentity cookieIdentity = await user.GenerateUserIdentityAsync(UserManager,
                     CookieAuthenticationDefaults.AuthenticationType);
 
@@ -382,7 +555,7 @@ namespace ConfessionAPI.Controllers
 
                 Regex regex = new Regex(@"^(?=.*\d)(?=.*[a-z])(?=.*[a-zA-Z]).{6,}$");
                 Match match = regex.Match(model.Password);
-                
+
                 if (!match.Success)
                 {
                     ModelState.AddModelError("Error", $"Mật khẩu phải có ít nhất 01 chữ cái thường, 01 chữ số và tối thiểu 06 ký tự");
@@ -392,7 +565,7 @@ namespace ConfessionAPI.Controllers
                 string userRole = "User";
                 user = new Account()
                 {
-                    UserName = model.UserName, 
+                    UserName = model.UserName,
                     Email = model.Email,
                     UserProfile = new UserProfile
                     {
@@ -420,15 +593,13 @@ namespace ConfessionAPI.Controllers
 
                     return GetErrorResult(result);
                 }
-                
+
+                return Json(user);
             }
             catch (Exception e)
             {
                 return Json(e);
             }
-            
-
-            return Json(user);
         }
 
         // POST api/Account/RegisterExternal
@@ -459,9 +630,9 @@ namespace ConfessionAPI.Controllers
             result = await UserManager.AddLoginAsync(user.Id, info.Login);
             if (!result.Succeeded)
             {
-                return GetErrorResult(result); 
-                
-                
+                return GetErrorResult(result);
+
+
             }
             return Ok();
         }

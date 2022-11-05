@@ -27,7 +27,6 @@ namespace ConfessionAPI.DAL
         public DbSet<CommentLike> CommentLikes { get; set; }
         public DbSet<IdentityUserRole> UserInRoles { get; set; }
         public DbSet<Notification> Notification { get; set; }
-        public DbSet<EmailSystem> EmailSystems { get; set; }
 
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)

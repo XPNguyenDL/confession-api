@@ -12,6 +12,7 @@ using System.Web.Http;
 using ConfessionAPI.Areas.User.Data;
 using ConfessionAPI.DAL;
 using ConfessionAPI.Models;
+using Microsoft.Ajax.Utilities;
 using Microsoft.AspNet.Identity;
 using Newtonsoft.Json;
 
@@ -63,7 +64,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                         Dislike = 0,
                         Report = 0,
                         Active = true,
-                        Status = PostStatus.Violate,
+                        Status = PostStatus.Valid,
                         CreatedTime = DateTime.Now,
                         PrivateMode = createModel.PrivateMode,
                         Categories = new List<Category>(),
@@ -247,7 +248,6 @@ namespace ConfessionAPI.Areas.User.Controllers
         {
             try
             {
-
                 Guid postId = Guid.Parse(HttpContext.Current.Request["Id"]);
                 var userId = User.Identity.GetUserId();
 
@@ -266,6 +266,16 @@ namespace ConfessionAPI.Areas.User.Controllers
                     foreach (var postLike in postLikes)
                     {
                         db.PostLikes.Remove(postLike);
+                    }
+                }
+
+                // Delete PostReport
+                var postReports = db.PostReports.Where(s => s.Id == oldPost.Id).ToList();
+                if (postReports.Count != 0)
+                {
+                    foreach (var postReport in postReports)
+                    {
+                        db.PostReports.Remove(postReport);
                     }
                 }
 
@@ -341,7 +351,7 @@ namespace ConfessionAPI.Areas.User.Controllers
                 var post = new Post();
                 var idPost = Guid.Parse(HttpContext.Current.Request["Id"]);
 
-                post = db.Posts.Find(idPost);
+                post = db.Posts.FirstOrDefault(s => s.Id == idPost);
 
                 if (post == null)
                 {
@@ -466,6 +476,7 @@ namespace ConfessionAPI.Areas.User.Controllers
             return user;
         }
 
+
         [HttpPost]
         public async Task<IHttpActionResult> Dislike()
         {
@@ -517,6 +528,87 @@ namespace ConfessionAPI.Areas.User.Controllers
                 post.Dislike = totalDislike;
                 return Json(post);
 
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
+        [HttpPost]
+        public IHttpActionResult Report()
+        {
+            try
+            {
+                var postId = Guid.Parse(HttpContext.Current.Request["id"]);
+                var userId = User.Identity.GetUserId();
+
+                var data = HttpContext.Current.Request["Report"];
+                var report = JsonConvert.DeserializeObject<PostReport>(data);
+
+                var postReportCheck = db.PostReports.SingleOrDefault(x => x.UserID == userId && x.Id == postId);
+                if (postReportCheck == null)
+                {
+                    var post = db.Posts.FirstOrDefault(s => s.Id == postId);
+
+                    if (post == null)
+                    {
+                        ModelState.AddModelError("Error", "Bài viết không tồn tại");
+                        return BadRequest(ModelState);
+                    }
+
+                    var userPost = GetUserByPost(post);
+                    var userReport = GetUserById(userId);
+                    if (userPost.Id != userReport.Id)
+                    {
+                        var postReport = new PostReport()
+                        {
+                            Id = post.Id,
+                            UserID = userId,
+                            Description = report.Description,
+                            TimeReport = DateTime.Now
+                        };
+
+                        db.PostReports.Add(postReport);
+                        db.SaveChanges();
+                    }
+                    var listReports = db.PostReports.Where(s => s.Id == postId);
+                    post.Report = listReports.Count();
+                    if (listReports.Count() > 50)
+                    {
+                        post.Active = false;
+                        post.Status = PostStatus.Violate;
+
+                        var notify = new Notification()
+                        {
+                            Id = Guid.NewGuid(),
+                            Avatar = "Default/Avatar_system.png",
+                            IsRead = false,
+                            NotifyName = "Hệ thống",
+                            NotifyDate = DateTime.Now,
+                            Description = $" đã ẩn bài viết của bạn do vi phạm quy tắc của cộng đồng!",
+                            UserID = userPost.Id,
+                            NotifyUserId = "",
+                            TypeNotify = TypeNotify.Report,
+                            PostId = post.Id
+                        };
+                        db.Notification.Add(notify);
+
+                    }
+
+                    db.Entry(post).State = EntityState.Modified;
+                    db.SaveChanges();
+
+                    post = db.Posts.SingleOrDefault(s => s.Id == postId);
+                    return Json(post);
+
+                }
+                else
+                {
+                    ModelState.AddModelError("Error", "Bạn đã báo cáo bài viết này");
+                    return BadRequest(ModelState);
+                }
             }
             catch (Exception e)
             {
@@ -591,20 +683,6 @@ namespace ConfessionAPI.Areas.User.Controllers
             #endregion
 
         }
-
-        //[HttpPost]
-        //public IHttpActionResult Report()
-        //{
-        //    try
-        //    {
-               
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        ModelState.AddModelError("Error", e.Message);
-        //        return BadRequest(ModelState);
-        //    }
-        //}
 
         /// <summary>
         /// Phương thức tìm nhóm còn của comment

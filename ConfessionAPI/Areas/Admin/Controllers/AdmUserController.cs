@@ -46,13 +46,33 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                     temp.Add(role.Name);
                     account.RoleTemps = temp;
                 }
+                account.Comments.Clear();
+                account.PostHistory.Clear();
+                account.Notifications.OrderByDescending(s => s.NotifyDate);
+
             }
             
             return Json(listAccounts);
         }
 
+        [HttpGet]
+        public IHttpActionResult GetRole()
+        {
+            try
+            {
+                var roles = db.Roles.ToList();
+                
+                return Json(roles);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
         [HttpPost]
-        public async Task<IHttpActionResult> Edit()
+        public IHttpActionResult Edit()
         {
             try
             {
@@ -61,38 +81,6 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                 var user = db.IdentityUsers.SingleOrDefault(s => s.Id == userUpdate.Id);
                 if (user != null)
                 {
-                    userUpdate.UserProfile.Id = user.UserProfile.Id;
-                    user.UserProfile = userUpdate.UserProfile;
-                    user.Email = userUpdate.Email;
-                    user.PhoneNumber = userUpdate.PhoneNumber;
-
-                    var ctx = HttpContext.Current;
-                    var root = ctx.Server.MapPath("~/Uploads/Pictures/User/" + user.Id);
-                    if (Directory.Exists(root))
-                    {
-                        Directory.Delete(root, true);
-                    }
-
-                    var provider = new MultipartFormDataStreamProvider(root);
-
-                    if (!Directory.Exists(root))
-                    {
-                        Directory.CreateDirectory(root);
-                    }
-
-                    await Request.Content.ReadAsMultipartAsync(provider)
-                        .ContinueWith(async (a) =>
-                        {
-                            var file = provider.FileData.FirstOrDefault();
-                            string name = file.Headers.ContentDisposition.FileName;
-                            name = Guid.NewGuid() + "_" + name.Trim('"');
-                            var localFileName = file.LocalFileName;
-                            var filePath = Path.Combine(root, name);
-                            user.UserProfile.Avatar = user.Id + "/" + name;
-                            File.Move(localFileName, filePath);
-
-                        }).Unwrap();
-                    
                     if (userUpdate.RoleTemps != null)
                     {
                         var oldRole = db.UserInRoles.Where(s => s.UserId == userUpdate.Id).ToList();
@@ -102,7 +90,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                         }
                         foreach (var item in userUpdate.RoleTemps)
                         {
-                            var idRole = db.Roles.SingleOrDefault(s => s.Name == item);
+                            var idRole = db.Roles.SingleOrDefault(s => s.Id == item);
                             db.UserInRoles.Add(new IdentityUserRole()
                             {
                                 // bug to đùng

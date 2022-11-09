@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Web;
+using System.Web.Http.Results;
 using System.Web.Mvc;
 
 namespace ConfessionAPI.Controllers
 {
     public class ImageController : Controller
     {
+
         // GET: Post
         public ActionResult Post(string id)
         {

@@ -1,19 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Web;
-using System.Web.Hosting;
 using System.Web.Http;
-using ConfessionAPI.Areas.User.Data;
 using ConfessionAPI.DAL;
 using ConfessionAPI.Models;
-using Newtonsoft.Json;
 
 namespace ConfessionAPI.Controllers
 {
@@ -112,10 +103,12 @@ namespace ConfessionAPI.Controllers
                 {
                     post.Avatar = "Default/Avatar_default.png";
                 }
+                post.PostReports.Clear();
             }
 
             posts = posts.Where(s => s.Active).ToList();
             posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
+            
             return posts;
         }
 
@@ -125,6 +118,7 @@ namespace ConfessionAPI.Controllers
             try
             {
                 var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
+                posts = posts.Where(s => s.Active).ToList();
                 posts = FilterPosts(posts);
 
                 return Json(posts);

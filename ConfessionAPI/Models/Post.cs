@@ -12,6 +12,7 @@ namespace ConfessionAPI.Models
     public enum PostStatus
     {
         Violate, // Vi phạm nội quy
+        Valid // hợp lệ
     }
 
     public class Post
@@ -32,7 +33,9 @@ namespace ConfessionAPI.Models
             this.Id = s.Id;
             this.Pictures = s.Pictures;
             this.PostLikes = s.PostLikes;
+            this.PostReports = s.PostReports;
             this.Report = s.Report;
+            
             this.PostHistories = s.PostHistories;
             this.Title = s.Title;
             this.PrivateMode = s.PrivateMode;
@@ -104,6 +107,9 @@ namespace ConfessionAPI.Models
         [DataMember]
         public virtual IList<PostLike> PostLikes { get; set; }
 
+        [DataMember]
+        public virtual IList<PostReport> PostReports { get; set; }
+
     }
 
     public class PostLike
@@ -130,5 +136,30 @@ namespace ConfessionAPI.Models
         public virtual Post Post { get; set; }
     }
 
-    
+    public class PostReport
+    {
+        [Key]
+        [Column(Order = 1)]
+        [ForeignKey("Post")]
+        public Guid Id { get; set; }
+
+        [Key]
+        [Column(Order = 2)]
+        [MaxLength(500)]
+        public string UserID { get; set; }
+
+        public DateTime TimeReport { get; set; }
+
+        [StringLength(500)]
+        public string Description { get; set; }
+
+        // ======================================================
+        // Navigation properties
+        // ======================================================
+
+        [JsonIgnore]
+        public virtual Post Post { get; set; }
+    }
+
+
 }

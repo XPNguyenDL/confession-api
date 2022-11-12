@@ -48,7 +48,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                 }
                 account.Comments.Clear();
                 account.PostHistory.Clear();
-                account.Notifications.OrderByDescending(s => s.NotifyDate);
+                account.Notifications.Clear();
 
             }
             
@@ -72,7 +72,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public IHttpActionResult Edit()
+        public IHttpActionResult SetRolesUser()
         {
             try
             {
@@ -115,6 +115,192 @@ namespace ConfessionAPI.Areas.Admin.Controllers
 
         }
 
+        [HttpPost]
+        public IHttpActionResult Delete()
+        {
+            try
+            {
+
+                var userId = HttpContext.Current.Request["Id"];
+                
+                var user = db.IdentityUsers.SingleOrDefault(s => s.Id == userId);
+                if (user == null)
+                {
+                    ModelState.AddModelError("Error", "Tài khoản không tồn tại.");
+                    return BadRequest(ModelState);
+                }
+                
+                DeletePostUser(user.Id);
+
+                var listIdCmt = DeleteParentComment(user.Id);
+                DeleteComment(listIdCmt);
+
+
+                db.UserProfiles.Remove(user.UserProfile);
+
+                var listNotifies = db.Notification.Where(s => s.UserID == user.Id).ToList();
+                foreach (var notify in listNotifies)
+                {
+                    db.Notification.Remove(notify);
+                }
+
+                db.IdentityUsers.Remove(user);
+
+                return Json(user);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
+        private void DeletePostUser(string userId)
+        {
+
+
+            var listCommentLikes = db.CommentLikes.Where(s => s.UserID == userId).ToList();
+            foreach (var commentLike in listCommentLikes)
+            {
+                db.CommentLikes.Remove(commentLike);
+            }
+
+
+            var listPostLikes = db.PostLikes.Where(s => s.UserID == userId);
+            foreach (var postLike in listPostLikes)
+            {
+                db.PostLikes.Remove(postLike);
+            }
+
+            var listPosts = db.Posts.Where(s => s.PostHistories.Any(x => x.AccountId == userId)).ToList();
+            foreach (var post in listPosts)
+            {
+                DeletePost(post.Id);
+            }
+
+            db.SaveChanges();
+
+        }
+
+        private void ChildComment(Comment comment, List<Comment> allCmts, List<Guid> listId)
+        {
+            comment.ChildComments = allCmts
+                .Where(x => x.ParentId == comment.Id)
+                .ToList();
+            var list = new List<Guid>();
+            foreach (var subCmt in comment.ChildComments)
+            {
+                listId.Add(subCmt.Id);
+                ChildComment(subCmt, allCmts, listId);
+            }
+        }
+
+        private List<Guid> DeleteParentComment(string idUser)
+        {
+            var allCmts = db.Comments.ToList();
+
+            var groupCmts = allCmts
+                .Where(x => x.AccountId == idUser)
+                .ToList();
+            var listIdCmt = new List<Guid>();
+            foreach (var cmt in groupCmts)
+            {
+                listIdCmt.Add(cmt.Id);
+                ChildComment(cmt, allCmts, listIdCmt);
+
+            }
+
+            var resultList = new List<Guid>();
+            for (int i = listIdCmt.Count - 1; i >= 0; i--)
+            {
+                resultList.Add(listIdCmt[i]);
+            }
+
+            return resultList;
+        }
+
+        private void DeleteComment(List<Guid> listIdCmt)
+        {
+            
+            foreach (var idCmt in listIdCmt)
+            {
+                var cmt = db.Comments.Find(idCmt);
+                var listCmtLikes = db.CommentLikes.Where(s => s.Id == idCmt).ToList();
+                foreach (var cmtLike in listCmtLikes)
+                {
+                    db.CommentLikes.Remove(cmtLike);
+                }
+
+                db.Comments.Remove(cmt);
+            }
+        }
+
+        private void DeletePost(Guid postId)
+        {
+            var listPostHistorys = db.PostHistories.Where(x => x.PostId == postId).ToList();
+            var oldPost = db.Posts.Find(postId);
+
+            // Delete PostLike
+            var postLikes = db.PostLikes.Where(s => s.Id == oldPost.Id).ToList();
+            if (postLikes.Count != 0)
+            {
+                foreach (var postLike in postLikes)
+                {
+                    db.PostLikes.Remove(postLike);
+                }
+            }
+
+            // Delete PostReport
+            var postReports = db.PostReports.Where(s => s.Id == oldPost.Id).ToList();
+            if (postReports.Count != 0)
+            {
+                foreach (var postReport in postReports)
+                {
+                    db.PostReports.Remove(postReport);
+                }
+            }
+
+            // Delete comment
+            var comments = db.Comments.Where(s => s.Id == oldPost.Id).ToList();
+            if (comments.Count != 0)
+            {
+                foreach (var comment in comments)
+                {
+                    // Delete CommentLike
+                    var commentLikes = db.CommentLikes.Where(s => s.Id == comment.Id);
+                    foreach (var commentLike in commentLikes)
+                    {
+                        db.CommentLikes.Remove(commentLike);
+                    }
+                    db.Comments.Remove(comment);
+                }
+            }
+
+            // Delete Picture
+            var ctx = HttpContext.Current;
+            var root = ctx.Server.MapPath("~/Uploads/Pictures/Post/" + oldPost.Id);
+            if (Directory.Exists(root))
+            {
+                var pictures = db.Pictures.Where(x => x.PostId == oldPost.Id);
+                foreach (var item in pictures)
+                {
+                    db.Pictures.Remove(item);
+                }
+                Directory.Delete(root, true);
+            }
+
+            // Delete PostHistory
+            if (listPostHistorys.Count != 0)
+            {
+                foreach (var itemHistory in listPostHistorys)
+                {
+                    db.PostHistories.Remove(itemHistory);
+                }
+            }
+
+            db.Posts.Remove(oldPost);
+            db.SaveChanges();
+        }
 
         private void DeleteRoles(List<IdentityUserRole> userRoles, Account temp)
         {
@@ -125,5 +311,8 @@ namespace ConfessionAPI.Areas.Admin.Controllers
 
             db.SaveChanges();
         }
+
+
+
     }
 }

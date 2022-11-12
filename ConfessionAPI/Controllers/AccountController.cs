@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -76,6 +77,7 @@ namespace ConfessionAPI.Controllers
         {
             try
             {
+                
                 var otp = RandomString(6);
                 var email = HttpContext.Current.Request["email"];
                 Regex regex = new Regex(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$");
@@ -92,22 +94,21 @@ namespace ConfessionAPI.Controllers
                             user.OtpWrongTime = 0;
                             context.Entry(user).State = EntityState.Modified;
                             context.SaveChanges();
+
+                            var ctx = HttpContext.Current;
+                            var dir = ctx.Server.MapPath("~/App_Data/LayoutHtml/EmailLayout/");
+                            var path = Path.Combine(dir, "EmailOtp.html");
+                            var mailBody = File.ReadAllText(path);
+                            
+                            mailBody = mailBody.Replace("{otp}", user.Otp);
+                            mailBody = mailBody.Replace("{username}", user.UserName);
+                            
                             using (MailMessage mail = new MailMessage())
                             {
                                 mail.From = new MailAddress("noreply.email.dluconfession@gmail.com");
                                 mail.To.Add(email);
                                 mail.Subject = $"{otp} là mã xác nhận tài khoản DLU-Confession của bạn";
-                                mail.Body = "<p><span style=\"color:rgb(0,0,0);font-size:15px\">" +
-                                            "Chào bạn<br>" +
-                                            "</span></p>" +
-                                            "<p><span style=\"color:rgb(0,0,0);font-size:15px\">" +
-                                            "Bạn đang Hoàn thành xác nhận đổi mật khẩu, Mã xác nhận là&nbsp;" +
-                                            "</span><span style=\"color:rgb(0,0,0)\"><strong><span style=\"color:rgb(78,164,220);font-size:15px\">" +
-                                            $"{otp}" +
-                                            "</span></strong><span style=\"font-size:15px\">.</span></span> </p>" +
-                                            "<p><span style=\"color:rgb(0,0,0);font-size:15px\">" +
-                                            "Vui lòng hoàn thành xác nhận trong vòng 10 phút." +
-                                            "<br></span></p>";
+                                mail.Body = mailBody;
                                 mail.IsBodyHtml = true;
 
                                 using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587))

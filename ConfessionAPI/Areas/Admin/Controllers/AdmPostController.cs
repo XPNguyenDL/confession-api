@@ -107,8 +107,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                     post.Avatar = "Default/Avatar_default.png";
                 }
             }
-
-            posts = posts.Where(s => s.Active).ToList();
+            
             posts = posts.OrderByDescending(x => x.CreatedTime).ToList();
 
             return posts;
@@ -130,7 +129,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public IHttpActionResult ActivePost()
+        public IHttpActionResult IgnorePost()
         {
             try
             {
@@ -142,7 +141,10 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                     return BadRequest();
                 }
 
-                if (!post.Active)
+                var totalReport = post.Report;
+                var postActive = post.Active;
+
+                if (post.Report > 0)
                 {
                     post.Status = PostStatus.Valid;
                     post.Active = true;
@@ -158,20 +160,23 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                     var userPost = GetUserByPost(postId);
                     var userAdmin = GetUserById(User.Identity.GetUserId());
 
-                    var notifyPost = new Notification()
+                    if (totalReport > 50 || postActive == false)
                     {
-                        Id = Guid.NewGuid(),
-                        Avatar = userAdmin.UserProfile.Avatar,
-                        IsRead = false,
-                        NotifyName = userAdmin.UserProfile.NickName,
-                        NotifyDate = DateTime.Now,
-                        Description = $" đã được phê duyệt là không vi phạm!",
-                        UserID = userPost.Id,
-                        NotifyUserId = userAdmin.Id,
-                        TypeNotify = TypeNotify.Comment,
-                        PostId = postId
-                    };
-                    db.Notification.Add(notifyPost);
+                        var notifyPost = new Notification()
+                        {
+                            Id = Guid.NewGuid(),
+                            Avatar = userAdmin.UserProfile.Avatar,
+                            IsRead = false,
+                            NotifyName = userAdmin.UserProfile.NickName,
+                            NotifyDate = DateTime.Now,
+                            Description = $" đã được phê duyệt là không vi phạm!",
+                            UserID = userPost.Id,
+                            NotifyUserId = userAdmin.Id,
+                            TypeNotify = TypeNotify.Report,
+                            PostId = postId
+                        };
+                        db.Notification.Add(notifyPost);
+                    }
 
                     db.Entry(post).State = EntityState.Modified;
                     db.SaveChanges();
@@ -213,6 +218,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                 var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
                 posts = posts.Where(s => s.Report > 0).ToList();
                 posts = FilterPosts(posts);
+                posts = posts.OrderByDescending(s => s.Report).ToList();
                 return Json(posts);
             }
             catch (Exception ex)
@@ -274,8 +280,10 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                     }
                 }
 
-                var newPost = db.Posts.Where(s => !s.Active).ToList();
-                return Json(newPost);
+                var posts = db.Posts.ToList().Select(s => new Post(s)).ToList();
+                posts = posts.Where(s => s.Report > 0).ToList();
+                posts = FilterPosts(posts);
+                return Json(posts);
             }
             catch (Exception e)
             {

@@ -285,7 +285,8 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                         {
                             posts = posts.Where(x =>
                                 RemoveSignVietnameseString(x.Title.ToLower()).Contains(key) ||
-                                RemoveSignVietnameseString(x.Content.ToLower()).Contains(key) ||
+                                RemoveSignVietnameseString(x.Content.ToLower()).Contains(key) || 
+                                x.PostReports.Any(r => RemoveSignVietnameseString(r.Description).ToLower().Contains(key))||
                                 x.Categories.Any(c => RemoveSignVietnameseString(c.Name).ToLower().Contains(key))).ToList();
                         }
                     }

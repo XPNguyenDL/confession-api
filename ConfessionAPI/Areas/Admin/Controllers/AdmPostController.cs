@@ -266,6 +266,45 @@ namespace ConfessionAPI.Areas.Admin.Controllers
             }
         }
 
+        [HttpPost]
+        public IHttpActionResult FindPostViolate()
+        {
+            try
+            {
+                string keyword = HttpContext.Current.Request["keyword"];
+                keyword = keyword.Replace("\n", "").Replace("\r", "");
+                keyword = RemoveSignVietnameseString(keyword).ToLower();
+                var listKey = keyword.Split(' ');
+
+                var posts = db.Posts.Where(s => s.Report > 0).ToList();
+                foreach (var key in listKey)
+                {
+                    if (posts.Count > 0)
+                    {
+                        if (!string.IsNullOrWhiteSpace(key))
+                        {
+                            posts = posts.Where(x =>
+                                RemoveSignVietnameseString(x.Title.ToLower()).Contains(key) ||
+                                RemoveSignVietnameseString(x.Content.ToLower()).Contains(key) ||
+                                x.Categories.Any(c => RemoveSignVietnameseString(c.Name).ToLower().Contains(key))).ToList();
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                posts = FilterPosts(posts);
+                posts = posts.OrderByDescending(s => s.Report).ToList();
+                return Json(posts);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("Error", ex.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
         [HttpGet]
         public IHttpActionResult DeleteViolate()
         {

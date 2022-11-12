@@ -17,6 +17,27 @@ namespace ConfessionAPI.Models
     }
     public class UserProfile
     {
+
+        public UserProfile()
+        {
+            
+        }
+
+        public UserProfile(UserProfile profile)
+        {
+            this.Id = profile.Id;
+            this.Description = "";
+            if (profile.Description != null)
+            {
+                this.Description = profile.Description;
+            }
+            this.NickName = "";
+            if (profile.NickName != null)
+            {
+                this.NickName = profile.NickName;
+            }
+
+        }
         [Key, ForeignKey("Account")]
         [StringLength(128)]
         public string Id { get; set; }

@@ -445,25 +445,6 @@ namespace ConfessionAPI.Areas.User.Controllers
             }
         }
 
-        private Account GetUserByPost(Post post)
-        {
-            var user = new Account();
-
-            var postHistorys = db.PostHistories.Where(x => x.PostId == post.Id).ToList();
-            foreach (var postHistory in postHistorys)
-            {
-                user = db.IdentityUsers.Find(postHistory.AccountId);
-                break;
-            }
-
-            if (user.UserProfile.NickName == null)
-            {
-                user.UserProfile.NickName = "User@" + user.UserProfile.Id.Split('-')[0];
-            }
-
-            return user;
-        }
-
         private Account GetUserById(string id)
         {
             var user = db.IdentityUsers.Find(id);
@@ -475,7 +456,6 @@ namespace ConfessionAPI.Areas.User.Controllers
 
             return user;
         }
-
 
         [HttpPost]
         public async Task<IHttpActionResult> Dislike()
@@ -714,6 +694,24 @@ namespace ConfessionAPI.Areas.User.Controllers
                 }
                 AddSubComment(subCmt, allCmts);
             }
+        }
+        private Account GetUserByPost(Post post)
+        {
+            var user = new Account();
+
+            var postHistorys = db.PostHistories.Where(x => x.PostId == post.Id).ToList();
+            foreach (var postHistory in postHistorys)
+            {
+                user = db.IdentityUsers.Find(postHistory.AccountId);
+                break;
+            }
+
+            if (user.UserProfile.NickName == null)
+            {
+                user.UserProfile.NickName = "User@" + user.UserProfile.Id.Split('-')[0];
+            }
+
+            return user;
         }
 
         private List<Comment> PolulateComment(Guid postId)

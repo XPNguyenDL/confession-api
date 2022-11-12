@@ -36,21 +36,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
         public IHttpActionResult GetUserInfo()
         {
             var listAccounts = db.IdentityUsers.ToList();
-            foreach (var account in listAccounts)
-            {
-                var userInRoles = db.UserInRoles.Where(s => s.UserId == account.Id).ToList();
-                List<string> temp = new List<string>();
-                foreach (var userRole in userInRoles)
-                {
-                    var role = db.Roles.Find(userRole.RoleId);
-                    temp.Add(role.Name);
-                    account.RoleTemps = temp;
-                }
-                account.Comments.Clear();
-                account.PostHistory.Clear();
-                account.Notifications.Clear();
-
-            }
+            listAccounts = FilterUsers(listAccounts);
 
             return Json(listAccounts);
         }
@@ -175,6 +161,98 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                 ModelState.AddModelError("Error", e.Message);
                 return BadRequest(ModelState);
             }
+        }
+
+        [HttpPost]
+        public IHttpActionResult FindUser()
+        {
+            try
+            {
+                string keyword = HttpContext.Current.Request["keyword"];
+                keyword = keyword.Replace("\n", "").Replace("\r", "");
+                keyword = RemoveSignVietnameseString(keyword).ToLower();
+                var listKey = keyword.Split(' ');
+
+                var listUsers = db.IdentityUsers.ToList();
+                listUsers = FilterUsers(listUsers);
+
+                foreach (var key in listKey)
+                {
+                    if (listUsers.Count > 0)
+                    {
+                        if (!string.IsNullOrWhiteSpace(key))
+                        {
+                            listUsers = listUsers.Where(x => x.UserName.ToLower().Contains(key) ||
+                                x.Email.ToLower().Contains(key) ||
+                                RemoveSignVietnameseString(new UserProfile(x.UserProfile).NickName).ToLower().Contains(key)
+                                || x.RoleTemps.Any(s => s.ToLower().Contains(key))).ToList();
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                }
+
+                return Json(listUsers);
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("Error", e.Message);
+                return BadRequest(ModelState);
+            }
+        }
+
+        private List<Account> FilterUsers(List<Account> listUsers)
+        {
+            foreach (var account in listUsers)
+            {
+                var userInRoles = db.UserInRoles.Where(s => s.UserId == account.Id).ToList();
+                List<string> temp = new List<string>();
+                foreach (var userRole in userInRoles)
+                {
+                    var role = db.Roles.Find(userRole.RoleId);
+                    temp.Add(role.Name);
+                    account.RoleTemps = temp;
+                }
+                account.Comments.Clear();
+                account.PostHistory.Clear();
+                account.Notifications.Clear();
+
+            }
+
+            listUsers = listUsers.OrderByDescending(s => s.UserProfile.Birthday).ToList();
+
+            return listUsers;
+        }
+
+        private readonly string[] VietnameseSigns = new string[]
+        {
+            "aAeEoOuUiIdDyY",
+            "áàạảãâấầậẩẫăắằặẳẵ",
+            "ÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴ",
+            "éèẹẻẽêếềệểễ",
+            "ÉÈẸẺẼÊẾỀỆỂỄ",
+            "óòọỏõôốồộổỗơớờợởỡ",
+            "ÓÒỌỎÕÔỐỒỘỔỖƠỚỜỢỞỠ",
+            "úùụủũưứừựửữ",
+            "ÚÙỤỦŨƯỨỪỰỬỮ",
+            "íìịỉĩ",
+            "ÍÌỊỈĨ",
+            "đ",
+            "Đ",
+            "ýỳỵỷỹ",
+            "ÝỲỴỶỸ"
+        };
+        private string RemoveSignVietnameseString(string str)
+        {
+            for (int i = 1; i < VietnameseSigns.Length; i++)
+            {
+                for (int j = 0; j < VietnameseSigns[i].Length; j++)
+                    str = str.Replace(VietnameseSigns[i][j], VietnameseSigns[0][i - 1]);
+            }
+            return str;
         }
 
         private void DeletePostUser(string userId)

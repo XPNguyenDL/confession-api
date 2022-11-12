@@ -37,27 +37,27 @@ namespace ConfessionAPI.Providers
 
             if (user == null)
             {
-                if (context.UserName == "Admin" && context.Password == "Admin2022")
+                if (context.UserName == "admin" && context.Password == "dluconfession@2022!")
                 {
                     var adminUser = new Account()
                     {
-                        UserName = "Admin",
-                        Email = "admin@gmail.com",
-                        PhoneNumber = "034607648",
+                        UserName = "admin",
+                        Email = "contact.email.dluconfession@gmail.com",
                         UserProfile = new UserProfile
                         {
                             FirstName = "Super",
                             LastName = "Admin",
-                            Description = "Hello",
-                            Gender = Gender.Male,
+                            Description = "Admin DLU Confession",
+                            Gender = Gender.Other,
                             Major = "admin",
-                            Birthday = DateTime.Now
+                            Birthday = DateTime.Now,
+                            NickName = "Admin"
                         }
                     };
                     const string adminRole = "Admin",
                         managerRole = "Manager",
                         userRole = "User";
-                    var result = userManager.Create(adminUser, "Admin#123");
+                    var result = userManager.Create(adminUser, "dluconfession@2022!");
                     if (result.Succeeded)
                     {
                         userManager.AddToRole(adminUser.Id, adminRole);

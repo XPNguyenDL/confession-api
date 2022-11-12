@@ -146,7 +146,26 @@ namespace ConfessionAPI.Areas.Admin.Controllers
 
                 db.IdentityUsers.Remove(user);
 
-                return Json(user);
+                db.SaveChanges();
+
+                var listAccounts = db.IdentityUsers.ToList();
+                foreach (var account in listAccounts)
+                {
+                    var userInRoles = db.UserInRoles.Where(s => s.UserId == account.Id).ToList();
+                    List<string> temp = new List<string>();
+                    foreach (var userRole in userInRoles)
+                    {
+                        var role = db.Roles.Find(userRole.RoleId);
+                        temp.Add(role.Name);
+                        account.RoleTemps = temp;
+                    }
+                    account.Comments.Clear();
+                    account.PostHistory.Clear();
+                    account.Notifications.Clear();
+
+                }
+
+                return Json(listAccounts);
             }
             catch (Exception e)
             {
@@ -311,8 +330,6 @@ namespace ConfessionAPI.Areas.Admin.Controllers
 
             db.SaveChanges();
         }
-
-
 
     }
 }

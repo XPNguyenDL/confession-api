@@ -101,6 +101,15 @@ namespace ConfessionAPI.Areas.User.Controllers
                 }
 
                 db.Entry(user).State = EntityState.Modified;
+
+                var notifies = db.Notification.Where(s => s.NotifyUserId == userId).ToList();
+                foreach (var notify in notifies)
+                {
+                    notify.NotifyName = user.UserProfile.NickName;
+                    notify.Avatar = user.UserProfile.Avatar;
+                    db.Entry(notify).State = EntityState.Modified;
+                }
+
                 db.SaveChanges();
                 user.Comments.Clear();
                 user.PostHistory.Clear();

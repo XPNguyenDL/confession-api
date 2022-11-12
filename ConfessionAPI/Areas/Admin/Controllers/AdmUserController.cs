@@ -19,7 +19,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
 {
     public class AdmUserController : AdmController
     {
-        
+
         private ApplicationUserManager _userManager;
         public ApplicationUserManager UserManager
         {
@@ -51,7 +51,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                 account.Notifications.Clear();
 
             }
-            
+
             return Json(listAccounts);
         }
 
@@ -61,7 +61,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
             try
             {
                 var roles = db.Roles.ToList();
-                
+
                 return Json(roles);
             }
             catch (Exception e)
@@ -79,31 +79,34 @@ namespace ConfessionAPI.Areas.Admin.Controllers
                 var data = HttpContext.Current.Request["Account"];
                 Account userUpdate = JsonConvert.DeserializeObject<Account>(data);
                 var user = db.IdentityUsers.SingleOrDefault(s => s.Id == userUpdate.Id);
-                if (user != null)
+                if (user == null)
                 {
-                    if (userUpdate.RoleTemps != null)
-                    {
-                        var oldRole = db.UserInRoles.Where(s => s.UserId == userUpdate.Id).ToList();
-                        foreach (var role in oldRole)
-                        {
-                            db.Entry(role).State = EntityState.Deleted;
-                        }
-                        foreach (var item in userUpdate.RoleTemps)
-                        {
-                            var idRole = db.Roles.SingleOrDefault(s => s.Id == item);
-                            db.UserInRoles.Add(new IdentityUserRole()
-                            {
-                                // bug to đùng
-                                RoleId = idRole.Id,
-                                UserId = user.Id
-                            });
-                        }
-                        db.SaveChanges();
-                    }
+                    ModelState.AddModelError("Error", "Tài khoản không tồn tại");
+                    return BadRequest(ModelState);
+                }
 
-                    db.Entry(user).State = EntityState.Modified;
+                if (userUpdate.RoleTemps != null)
+                {
+                    var oldRole = db.UserInRoles.Where(s => s.UserId == userUpdate.Id).ToList();
+                    foreach (var role in oldRole)
+                    {
+                        db.Entry(role).State = EntityState.Deleted;
+                    }
+                    foreach (var item in userUpdate.RoleTemps)
+                    {
+                        var idRole = db.Roles.SingleOrDefault(s => s.Id == item);
+                        db.UserInRoles.Add(new IdentityUserRole()
+                        {
+                            // bug to đùng
+                            RoleId = idRole.Id,
+                            UserId = user.Id
+                        });
+                    }
                     db.SaveChanges();
                 }
+
+                db.Entry(user).State = EntityState.Modified;
+                db.SaveChanges();
 
                 return Json(user);
             }
@@ -122,14 +125,14 @@ namespace ConfessionAPI.Areas.Admin.Controllers
             {
 
                 var userId = HttpContext.Current.Request["Id"];
-                
+
                 var user = db.IdentityUsers.SingleOrDefault(s => s.Id == userId);
                 if (user == null)
                 {
                     ModelState.AddModelError("Error", "Tài khoản không tồn tại.");
                     return BadRequest(ModelState);
                 }
-                
+
                 DeletePostUser(user.Id);
 
                 var listIdCmt = DeleteParentComment(user.Id);
@@ -240,7 +243,7 @@ namespace ConfessionAPI.Areas.Admin.Controllers
 
         private void DeleteComment(List<Guid> listIdCmt)
         {
-            
+
             foreach (var idCmt in listIdCmt)
             {
                 var cmt = db.Comments.Find(idCmt);

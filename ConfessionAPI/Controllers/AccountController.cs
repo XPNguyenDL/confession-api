@@ -581,6 +581,12 @@ namespace ConfessionAPI.Controllers
                     }
                 };
 
+                if (user.UserProfile.NickName.IsNullOrWhiteSpace())
+                {
+                    var numNickName = Guid.NewGuid().ToString().Split('-')[0];
+                    user.UserProfile.NickName = "User@" +  numNickName;
+                }
+
                 IdentityResult result = UserManager.Create(user, model.Password);
 
                 if (result.Succeeded)

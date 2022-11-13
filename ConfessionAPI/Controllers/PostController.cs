@@ -224,6 +224,10 @@ namespace ConfessionAPI.Controllers
 
                     post.Avatar = account.UserProfile.Avatar;
 
+                    if (post.PrivateMode)
+                    {
+                        post.Avatar = "Default/Avatar_default.png";
+                    }
                     foreach (var category in post.Categories)
                     {
                         if (category.Id == categoryId)

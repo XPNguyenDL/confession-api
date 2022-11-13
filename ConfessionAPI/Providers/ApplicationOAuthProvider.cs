@@ -51,7 +51,8 @@ namespace ConfessionAPI.Providers
                             Gender = Gender.Other,
                             Major = "admin",
                             Birthday = DateTime.Now,
-                            NickName = "Admin"
+                            NickName = "Admin",
+                            Avatar = "Default/Avatar_default.png"
                         }
                     };
                     const string adminRole = "Admin",

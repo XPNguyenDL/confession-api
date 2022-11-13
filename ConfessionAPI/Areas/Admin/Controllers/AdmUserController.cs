@@ -17,10 +17,11 @@ using Newtonsoft.Json;
 
 namespace ConfessionAPI.Areas.Admin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class AdmUserController : AdmController
     {
-
         private ApplicationUserManager _userManager;
+
         public ApplicationUserManager UserManager
         {
             get
